@@ -40,6 +40,7 @@ export default [
         alert: "readonly",
         confirm: "readonly",
         performance: "readonly",
+        Blob: "readonly",
         google: "readonly",
       },
     },
