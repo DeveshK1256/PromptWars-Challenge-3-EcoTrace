@@ -5,7 +5,7 @@
  * questions, and falls back to a local answer bank when the Gemini API
  * is unavailable.
  */
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-34";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-35";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 

@@ -3,14 +3,20 @@
  * Weekly eco-challenges, badge progression, and Green Points
  * leaderboard with real-time Firestore or demo-mode fallback.
  */
-import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-34";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
+import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-35";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
 
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");
 const leaderboard = document.querySelector("[data-leaderboard]");
 
+/**
+ * Updates all Green Points wallet displays across the page.
+ * @param {Object|null} profile - The user's EcoTrace profile.
+ * @param {number} [profile.greenPoints=0] - The user's current Green Points balance.
+ * @returns {void}
+ */
 function updateWallet(profile) {
   document.querySelectorAll("[data-green-points]").forEach((node) => {
     node.textContent = Number(profile?.greenPoints || 0).toLocaleString();
@@ -20,6 +26,14 @@ function updateWallet(profile) {
   });
 }
 
+/**
+ * Renders weekly eco-challenge cards into the challenge grid.
+ * Each card shows the challenge icon, title, description, points reward,
+ * deadline, and an Accept button. Already-accepted challenges are disabled.
+ * @param {Object|null} profile - The user's EcoTrace profile.
+ * @param {string[]} [profile.acceptedChallenges=[]] - IDs of challenges the user has accepted.
+ * @returns {void}
+ */
 function renderChallenges(profile) {
   if (!challengeGrid) return;
   const accepted = new Set(profile?.acceptedChallenges || []);
@@ -68,6 +82,13 @@ function renderChallenges(profile) {
   });
 }
 
+/**
+ * Renders badge progression cards showing the user's progress toward each badge threshold.
+ * Displays unlock status and a progress bar for each badge.
+ * @param {Object|null} profile - The user's EcoTrace profile.
+ * @param {number} [profile.greenPoints=0] - The user's current Green Points balance.
+ * @returns {void}
+ */
 function renderBadges(profile) {
   if (!badgeGrid) return;
   const points = Number(profile?.greenPoints || 0);
@@ -94,6 +115,12 @@ function renderBadges(profile) {
   });
 }
 
+/**
+ * Fetches the Green Points leaderboard from Firestore and renders the top 10 rows.
+ * @param {Object} user - The authenticated Firebase user object.
+ * @returns {Promise<void>} Resolves when the leaderboard has been rendered.
+ * @throws {Error} If the Firestore leaderboard query fails.
+ */
 async function renderLeaderboard(user) {
   if (!leaderboard) return;
   const rows = await ecoService.getLeaderboard(user);

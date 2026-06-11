@@ -4,10 +4,10 @@
  * real-time scoring, comparison bars, and Gemini AI-powered tips.
  */
 
-import { ECO_CONFIG } from "./config.js?v=firebase-config-34";
-import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-34";
+import { ECO_CONFIG } from "./config.js?v=firebase-config-35";
+import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-35";
 
 /** @type {HTMLFormElement|null} Main calculator form element. */
 const form = document.querySelector("[data-calculator-form]");
@@ -167,10 +167,20 @@ const EMISSION_FACTORS = [
   },
 ];
 
+/**
+ * Extracts a non-negative number from a FormData object.
+ * @param {FormData} data - The FormData instance to read from.
+ * @param {string} key - The form field name to look up.
+ * @returns {number} The parsed numeric value, clamped to a minimum of 0.
+ */
 function numberFromForm(data, key) {
   return Math.max(0, Number(data.get(key)) || 0);
 }
 
+/**
+ * Collects all current form field values into a structured calculator input object.
+ * @returns {{ carKm: number, flights: number, publicTransport: string, dietType: string, foodWaste: string, electricityBill: number, climateControl: boolean, renewable: boolean, onlineOrders: number, clothes: number, electronics: number }} An object containing every calculator input field.
+ */
 function getCalculatorData() {
   const data = new FormData(form);
   return {
@@ -188,6 +198,24 @@ function getCalculatorData() {
   };
 }
 
+/**
+ * Calculates the annual carbon footprint from user inputs.
+ * Computes category breakdowns for transport, food, energy, and shopping,
+ * then returns the total alongside the original form data.
+ * @param {Object} [input=getCalculatorData()] - Calculator input values; defaults to current form state.
+ * @param {number} input.carKm - Weekly car kilometres driven.
+ * @param {number} input.flights - Number of flights per year.
+ * @param {string} input.publicTransport - Public transport frequency ('none'|'occasional'|'weekly'|'daily').
+ * @param {string} input.dietType - Diet type ('vegan'|'vegetarian'|'meat').
+ * @param {string} input.foodWaste - Food waste level ('low'|'medium'|'high').
+ * @param {number} input.electricityBill - Monthly electricity bill in INR.
+ * @param {boolean} input.climateControl - Whether AC/heater is used regularly.
+ * @param {boolean} input.renewable - Whether renewable energy sources are used.
+ * @param {number} input.onlineOrders - Number of online orders per month.
+ * @param {number} input.clothes - Number of new clothing items per year.
+ * @param {number} input.electronics - Number of new electronic devices per year.
+ * @returns {{ formData: Object, breakdown: { transport: number, food: number, energy: number, shopping: number }, totalKg: number }} Calculation result with per-category breakdown and total in kg CO₂/year.
+ */
 export function calculateFootprint(input = getCalculatorData()) {
   const publicTransportMultiplier = {
     none: 1.12,
@@ -228,6 +256,12 @@ export function calculateFootprint(input = getCalculatorData()) {
   };
 }
 
+/**
+ * Updates wizard step visibility and indicator states based on the current activeStep.
+ * Shows/hides step panels, toggles active/complete classes on indicators,
+ * and toggles prev/next/finish button visibility.
+ * @returns {void}
+ */
 function renderStep() {
   panels.forEach((panel) => {
     panel.hidden = Number(panel.dataset.stepPanel) !== activeStep;
@@ -243,6 +277,12 @@ function renderStep() {
   document.querySelector("[data-finish-step]")?.toggleAttribute("hidden", activeStep !== panels.length);
 }
 
+/**
+ * Recalculates the footprint and updates all live score displays,
+ * category breakdown bars, tree-offset count, and comparison bars
+ * (user vs. India average vs. world average).
+ * @returns {void}
+ */
 function renderScore() {
   latestResult = calculateFootprint();
   const total = latestResult.totalKg;
@@ -274,12 +314,22 @@ function renderScore() {
   });
 }
 
+/**
+ * Reveals the result panel after recalculating scores and scrolls it into view.
+ * @returns {void}
+ */
 function showResults() {
   renderScore();
   resultPanel.hidden = false;
   resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * Renders a list of AI-generated personalised tips into the AI tips panel.
+ * @param {Array<{ title: string, category: string, savingKg: number, difficulty: string, body: string }>} tips - Array of tip objects returned by Gemini AI.
+ * @param {string} [sourceMessage=""] - Optional status message describing how tips were generated.
+ * @returns {void}
+ */
 function renderAiTips(tips, sourceMessage = "") {
   if (!aiTipsPanel) return;
   aiTipsPanel.hidden = false;
@@ -303,6 +353,13 @@ function renderAiTips(tips, sourceMessage = "") {
   aiTipsPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+/**
+ * Tests whether an emission factor matches a search query using case-insensitive substring matching
+ * across the factor's title, category, estimate, detail, and keywords.
+ * @param {{ title: string, category: string, estimate: string, detail: string, keywords: string[] }} factor - The emission factor entry to test.
+ * @param {string} query - The user's search query (empty string matches everything).
+ * @returns {boolean} True if the factor matches the query or the query is empty.
+ */
 function matchesEmissionFactor(factor, query) {
   if (!query) return true;
   const needle = query.toLowerCase();
@@ -310,6 +367,13 @@ function matchesEmissionFactor(factor, query) {
   return haystack.includes(needle);
 }
 
+/**
+ * Sets the value of all form controls matching the given field name.
+ * Handles radio buttons, checkboxes, and standard inputs appropriately.
+ * @param {string} name - The form control name attribute to target.
+ * @param {string|number|boolean} value - The value to apply to the control(s).
+ * @returns {void}
+ */
 function setNamedField(name, value) {
   const controls = form.querySelectorAll(`[name="${name}"]`);
   controls.forEach((control) => {
@@ -323,6 +387,12 @@ function setNamedField(name, value) {
   });
 }
 
+/**
+ * Applies an emission factor's example values to the calculator form,
+ * navigates to the relevant wizard step, recalculates the score, and shows a toast.
+ * @param {{ title: string, apply?: { step: number, fields: Object<string, string|number|boolean> } }} factor - The emission factor whose example values to apply.
+ * @returns {void}
+ */
 function applyEmissionFactor(factor) {
   if (!factor.apply) return;
   Object.entries(factor.apply.fields).forEach(([name, value]) => setNamedField(name, value));
@@ -333,6 +403,13 @@ function applyEmissionFactor(factor) {
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * Filters the emission factor database by query and renders matching result cards.
+ * Shows an empty-state message when no factors match. Cards with an `apply`
+ * property include a button to prefill the calculator form.
+ * @param {string} [query=""] - The search query to filter emission factors by.
+ * @returns {void}
+ */
 function renderEmissionSearchResults(query = "") {
   if (!emissionSearchResults) return;
   const results = EMISSION_FACTORS.filter((factor) => matchesEmissionFactor(factor, query)).slice(0, query ? 8 : 6);
@@ -376,6 +453,12 @@ function renderEmissionSearchResults(query = "") {
   });
 }
 
+/**
+ * Initialises the multi-step calculator by wiring up all event listeners
+ * (form input/change/submit, step navigation, save result, AI tips request,
+ * and emission search), then renders the initial step, score, and search results.
+ * @returns {void}
+ */
 function initCalculator() {
   if (!form) return;
   form.addEventListener("input", renderScore);

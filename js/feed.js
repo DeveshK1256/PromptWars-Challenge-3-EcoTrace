@@ -3,10 +3,10 @@
  * Environmental news feed with Google Custom Search integration,
  * topic filtering, article-read tracking, and Web Share API support.
  */
-import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-34";
-import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-34";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
+import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-35";
+import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-35";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
 
 const tabs = document.querySelector("[data-feed-tabs]");
 const grid = document.querySelector("[data-feed-grid]");
@@ -16,6 +16,12 @@ let activeTopic = "All";
 let articles = FEED_ARTICLES;
 const DISPLAY_COUNT = 10;
 
+/**
+ * Shuffles an array using the Fisher-Yates algorithm and returns a new array.
+ * The original array is not mutated.
+ * @param {Array<*>} arr - The array to shuffle.
+ * @returns {Array<*>} A new array with elements in random order.
+ */
 function shuffleArray(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -25,6 +31,13 @@ function shuffleArray(arr) {
   return a;
 }
 
+/**
+ * Infers a news category from an article's title and snippet using keyword matching.
+ * Falls back to "Climate Change" when no keywords match.
+ * @param {string} [title=""] - The article title.
+ * @param {string} [snippet=""] - The article snippet or description.
+ * @returns {string} One of 'Renewable Energy', 'World Environment News', 'Sustainability Tips', or 'Climate Change'.
+ */
 function inferCategory(title = "", snippet = "") {
   const text = `${title} ${snippet}`.toLowerCase();
   if (text.includes("solar") || text.includes("renewable") || text.includes("energy")) return "Renewable Energy";
@@ -33,6 +46,12 @@ function inferCategory(title = "", snippet = "") {
   return "Climate Change";
 }
 
+/**
+ * Fetches environmental news articles from the Google Custom Search API.
+ * Returns the built-in curated articles when search credentials are not configured.
+ * @returns {Promise<Array<{ id: string, category: string, title: string, source: string, url: string, summary: string, readMinutes: number }>>} An array of article objects.
+ * @throws {Error} If the Custom Search API returns a non-OK HTTP status.
+ */
 async function fetchSearchArticles() {
   if (!hasSearchConfig()) return FEED_ARTICLES;
   const params = new URLSearchParams({
@@ -56,6 +75,11 @@ async function fetchSearchArticles() {
   }));
 }
 
+/**
+ * Renders the topic filter tab buttons (e.g. All, Climate Change, Renewable Energy).
+ * Highlights the currently active topic and re-renders articles on click.
+ * @returns {void}
+ */
 function renderTabs() {
   if (!tabs) return;
   tabs.replaceChildren();
@@ -74,6 +98,12 @@ function renderTabs() {
   });
 }
 
+/**
+ * Renders article news cards into the feed grid, filtered by the active topic.
+ * Each card includes a "Read & Earn" button that awards Green Points and a
+ * share button using the Web Share API (falls back to clipboard copy).
+ * @returns {void}
+ */
 function renderArticles() {
   if (!grid) return;
   const readArticles = new Set(appState.profile?.readArticles || []);
@@ -137,6 +167,13 @@ function renderArticles() {
   });
 }
 
+/**
+ * Loads the news feed from localStorage cache, Google Custom Search API, or
+ * the built-in curated articles, then renders tabs and article cards.
+ * @param {boolean} [force=false] - When true, bypasses the daily cache and fetches fresh results.
+ * @returns {Promise<void>} Resolves when articles have been loaded and rendered.
+ * @throws {Error} If the Custom Search API call fails (falls back to curated articles).
+ */
 async function loadFeed(force = false) {
   if (hasSearchConfig()) {
     const key = `ecotrace.feed.${new Date().toISOString().slice(0, 10)}`;

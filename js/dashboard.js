@@ -3,13 +3,19 @@
  * User dashboard rendering — footprint history chart (Chart.js),
  * summary statistics, activity timeline, and score comparisons.
  */
-import { ECO_CONFIG } from "./config.js?v=firebase-config-34";
-import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
+import { ECO_CONFIG } from "./config.js?v=firebase-config-35";
+import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
 
 let breakdownChart;
 let trendChart;
 
+/**
+ * Prepares a canvas element for high-DPI rendering by setting its pixel
+ * dimensions, CSS size, and returning a scaled 2D context.
+ * @param {HTMLCanvasElement} canvas - The canvas element to prepare.
+ * @returns {{ ctx: CanvasRenderingContext2D, width: number, height: number }} The 2D context and the logical CSS dimensions.
+ */
 function prepareCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -25,6 +31,14 @@ function prepareCanvas(canvas) {
   return { ctx, width, height };
 }
 
+/**
+ * Draws a fallback donut chart on canvas when Chart.js is not available.
+ * Renders category arcs, a centre total label, and a colour legend.
+ * @param {HTMLCanvasElement|null} canvas - The target canvas element.
+ * @param {Object|null} latest - The most recent footprint result.
+ * @param {Object} latest.breakdown - Category breakdown with transport, food, energy, shopping values.
+ * @returns {void}
+ */
 function drawFallbackDonut(canvas, latest) {
   if (!canvas || !latest?.breakdown) return;
   const { ctx, width, height } = prepareCanvas(canvas);
@@ -65,6 +79,14 @@ function drawFallbackDonut(canvas, latest) {
   });
 }
 
+/**
+ * Draws a fallback line chart on canvas when Chart.js is not available.
+ * Renders grid lines, a line/area plot of the last 8 footprint values,
+ * data points, and month labels.
+ * @param {HTMLCanvasElement|null} canvas - The target canvas element.
+ * @param {Array<Object>} footprints - Sorted footprint records (newest first).
+ * @returns {void}
+ */
 function drawFallbackLine(canvas, footprints) {
   if (!canvas || !footprints.length) return;
   const { ctx, width, height } = prepareCanvas(canvas);
@@ -125,16 +147,33 @@ function drawFallbackLine(canvas, footprints) {
   });
 }
 
+/**
+ * Sorts an array of footprint records by date in descending order (newest first).
+ * @param {Array<Object>} records - Footprint records with `date` or `createdAt` fields.
+ * @returns {Array<Object>} A new array of records sorted newest-first.
+ */
 function sortFootprints(records) {
   return [...records].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
 }
 
+/**
+ * Sets the text content of all elements matching a CSS selector.
+ * @param {string} selector - A CSS selector string to match target elements.
+ * @param {string} value - The text content to assign to each matched element.
+ * @returns {void}
+ */
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach((node) => {
     node.textContent = value;
   });
 }
 
+/**
+ * Renders the daily, weekly, monthly, and annual metric cards from the latest footprint.
+ * @param {Object|undefined} latest - The most recent footprint result.
+ * @param {number} [latest.totalKg=0] - Total annual CO₂ in kilograms.
+ * @returns {void}
+ */
 function renderMetricCards(latest) {
   const annual = latest?.totalKg || 0;
   setText("[data-score-today]", `${Math.round(annual / 365).toLocaleString()} kg`);
@@ -143,6 +182,13 @@ function renderMetricCards(latest) {
   setText("[data-dashboard-total]", `${annual.toLocaleString()} kg/year`);
 }
 
+/**
+ * Renders the city-average comparison bar and label, showing how the user's
+ * footprint compares to the configured city average.
+ * @param {Object|undefined} latest - The most recent footprint result.
+ * @param {number} [latest.totalKg=0] - Total annual CO₂ in kilograms.
+ * @returns {void}
+ */
 function renderCityComparison(latest) {
   const total = latest?.totalKg || 0;
   const ratio = clamp((total / ECO_CONFIG.app.cityAverageKg) * 100, 4, 140);
@@ -158,6 +204,12 @@ function renderCityComparison(latest) {
   }
 }
 
+/**
+ * Renders a doughnut breakdown chart using Chart.js, or falls back to a
+ * canvas-drawn donut when Chart.js is not loaded.
+ * @param {Object|undefined} latest - The most recent footprint result with a `breakdown` property.
+ * @returns {void}
+ */
 function renderBreakdownChart(latest) {
   const canvas = document.getElementById("breakdownChart");
   if (!canvas || !latest?.breakdown) return;
@@ -195,6 +247,12 @@ function renderBreakdownChart(latest) {
   });
 }
 
+/**
+ * Renders a line trend chart of recent footprint history using Chart.js,
+ * or falls back to a canvas-drawn line chart when Chart.js is not loaded.
+ * @param {Array<Object>} footprints - Sorted footprint records (newest first).
+ * @returns {void}
+ */
 function renderTrendChart(footprints) {
   const canvas = document.getElementById("trendChart");
   if (!canvas) return;
@@ -238,6 +296,12 @@ function renderTrendChart(footprints) {
   });
 }
 
+/**
+ * Renders the user's activity timeline, showing up to 8 recent entries.
+ * Displays an empty state when no activities exist.
+ * @param {Array<{ message: string, createdAt: string }>} activities - Activity records to display.
+ * @returns {void}
+ */
 function renderActivityLog(activities) {
   const list = document.querySelector("[data-activity-log]");
   if (!list) return;
@@ -316,6 +380,93 @@ function renderMonthlyTrend(footprints) {
   panel.hidden = false;
 }
 
+/**
+ * Generates and renders personalised reduction goals based on the user's
+ * highest-emitting category from their latest footprint calculation.
+ * @param {Array<Object>} footprints - Sorted footprint records.
+ * @returns {void}
+ */
+function renderReductionGoals(footprints) {
+  const panel = document.querySelector('[data-reduction-goals]');
+  const grid = document.querySelector('[data-goals-grid]');
+  if (!panel || !grid || !footprints.length) return;
+
+  const latest = footprints[0];
+  const breakdown = latest.breakdown || {};
+  const goals = [];
+
+  if (breakdown.transport > 800) {
+    goals.push({
+      icon: '🚌',
+      title: 'Switch to Public Transport',
+      target: `Reduce transport emissions by ${Math.round(breakdown.transport * 0.3).toLocaleString()} kg`,
+      action: 'Use bus/metro 3 days a week instead of driving.',
+    });
+  }
+  if (breakdown.food > 1200) {
+    goals.push({
+      icon: '🥗',
+      title: 'Add 2 Meat-Free Days',
+      target: `Reduce food emissions by ${Math.round(breakdown.food * 0.15).toLocaleString()} kg`,
+      action: 'Try vegetarian meals on Monday and Thursday.',
+    });
+  }
+  if (breakdown.energy > 800) {
+    goals.push({
+      icon: '💡',
+      title: 'Cut Energy Use by 20%',
+      target: `Save ${Math.round(breakdown.energy * 0.2).toLocaleString()} kg CO₂`,
+      action: 'Switch off AC 2 hours earlier, use LED lighting.',
+    });
+  }
+  if (breakdown.shopping > 600) {
+    goals.push({
+      icon: '♻️',
+      title: 'Reduce Shopping Footprint',
+      target: `Save ${Math.round(breakdown.shopping * 0.25).toLocaleString()} kg CO₂`,
+      action: 'Buy second-hand, bundle online orders, extend device life.',
+    });
+  }
+  // Always show at least one goal
+  if (!goals.length) {
+    goals.push({
+      icon: '🌱',
+      title: 'Maintain Your Low Footprint',
+      target: `Keep emissions under ${(latest.totalKg || 4000).toLocaleString()} kg`,
+      action: 'Great job! Keep tracking monthly to stay on target.',
+    });
+  }
+
+  grid.replaceChildren();
+  goals.forEach(g => {
+    const card = document.createElement('article');
+    card.className = 'goal-card';
+    const icon = document.createElement('span');
+    icon.className = 'goal-icon';
+    icon.textContent = g.icon;
+    const title = document.createElement('h3');
+    title.textContent = g.title;
+    const target = document.createElement('p');
+    target.className = 'goal-target';
+    target.textContent = g.target;
+    const action = document.createElement('p');
+    action.className = 'muted';
+    action.textContent = g.action;
+    card.append(icon, title, target, action);
+    grid.append(card);
+  });
+  panel.hidden = false;
+}
+
+/**
+ * Fetches footprint history and activity log, then renders the complete
+ * dashboard: metric cards, city comparison, charts, activity log,
+ * monthly trend, CSV export, streak, points, and CO₂ saved.
+ * @param {Object} user - The authenticated Firebase user object.
+ * @param {Object} profile - The user's EcoTrace profile data.
+ * @returns {Promise<void>} Resolves when the dashboard has been fully rendered.
+ * @throws {Error} If fetching footprints or activities from Firestore fails.
+ */
 async function renderDashboard(user, profile) {
   const [footprints, activities] = await Promise.all([ecoService.getFootprints(user), ecoService.getActivities(user)]);
   const sorted = sortFootprints(footprints);
@@ -326,6 +477,7 @@ async function renderDashboard(user, profile) {
   renderTrendChart(sorted);
   renderActivityLog(activities);
   renderMonthlyTrend(sorted);
+  renderReductionGoals(sorted);
   document.querySelector('[data-export-csv]')?.addEventListener('click', () => exportCSV(sorted));
   setText("[data-streak-days]", `${profile?.streak || 5}-day reduction streak!`);
   setText("[data-dashboard-points]", `${Number(profile?.greenPoints || 0).toLocaleString()} points`);

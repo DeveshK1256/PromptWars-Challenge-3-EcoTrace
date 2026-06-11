@@ -2546,3 +2546,48 @@ textarea:focus-visible {
   .time-machine-fill { transition: none; }
   .compare-bar-fill { transition: none; }
 }
+
+/* ===== REDUCTION GOALS ===== */
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.goal-card {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s ease;
+}
+
+.goal-card:hover {
+  transform: translateY(-3px);
+}
+
+.goal-icon {
+  font-size: 2rem;
+  display: block;
+  margin-block-end: 0.5rem;
+}
+
+.goal-target {
+  font-weight: 700;
+  color: var(--forest-deep);
+  font-size: 0.95rem;
+}
+
+/* ===== MONTHLY COMPARISON ===== */
+.monthly-comparison {
+  padding: 1.2rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  margin-block-end: 1.5rem;
+}
+
+.monthly-comparison h3 {
+  margin-block-end: 0.5rem;
+}

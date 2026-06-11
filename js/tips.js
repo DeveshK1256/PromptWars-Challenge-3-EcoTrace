@@ -3,10 +3,10 @@
  * Personalised eco-tips page powered by Gemini AI with category
  * filtering, session caching, and tip-completion tracking.
  */
-import { TIP_CATEGORIES } from "./data.js?v=firebase-config-34";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-34";
+import { TIP_CATEGORIES } from "./data.js?v=firebase-config-35";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-35";
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");
@@ -16,14 +16,30 @@ let activeCategory = "All";
 let currentTips = [];
 let currentProfile = {};
 
+/**
+ * Returns today's date as an ISO date string (YYYY-MM-DD) for use as a cache key segment.
+ * @returns {string} Today's date in 'YYYY-MM-DD' format.
+ */
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Builds a localStorage cache key combining today's date and the profile's
+ * rounded total kg value, ensuring cached tips are scoped per day and footprint.
+ * @param {Object|null} profile - The user's footprint profile.
+ * @param {number} [profile.totalKg=0] - The total annual CO₂ in kilograms.
+ * @returns {string} A cache key like 'ecotrace.tips.2026-06-11.2400'.
+ */
 function cacheKey(profile) {
   return `ecotrace.tips.${todayKey()}.${Math.round(profile?.totalKg || 0)}`;
 }
 
+/**
+ * Retrieves the latest footprint profile from sessionStorage.
+ * Returns null if no profile is stored or if parsing fails.
+ * @returns {Object|null} The parsed footprint profile, or null.
+ */
 function getSessionProfile() {
   try {
     return JSON.parse(sessionStorage.getItem("ecotrace.latestProfile") || "null");
@@ -32,6 +48,13 @@ function getSessionProfile() {
   }
 }
 
+/**
+ * Resolves the user's most recent footprint profile, first checking
+ * sessionStorage and falling back to a Firestore query.
+ * @param {Object} user - The authenticated Firebase user object.
+ * @returns {Promise<Object>} The most recent footprint profile, or an empty object.
+ * @throws {Error} If the Firestore query fails and no session profile exists.
+ */
 async function getFootprintProfile(user) {
   const sessionProfile = getSessionProfile();
   if (sessionProfile) return sessionProfile;
@@ -39,6 +62,11 @@ async function getFootprintProfile(user) {
   return footprints.sort((a, b) => new Date(b.date) - new Date(a.date))[0] || {};
 }
 
+/**
+ * Renders the category filter tab buttons (e.g. All, Transport, Food).
+ * Highlights the currently active category and re-renders tips on click.
+ * @returns {void}
+ */
 function renderTabs() {
   if (!tabs) return;
   tabs.replaceChildren();
@@ -57,6 +85,12 @@ function renderTabs() {
   });
 }
 
+/**
+ * Renders the tip cards into the grid, filtered by the active category.
+ * Each card shows the tip's category, title, body, CO₂ saving, difficulty,
+ * and a "Mark as Done" button that awards Green Points on completion.
+ * @returns {void}
+ */
 function renderTips() {
   if (!grid) return;
   const completed = new Set(appState.profile?.completedTips || []);
@@ -105,6 +139,14 @@ function renderTips() {
   });
 }
 
+/**
+ * Loads personalised tips from session cache, localStorage cache, or
+ * the Gemini AI API, then renders tabs and tip cards.
+ * @param {Object} user - The authenticated Firebase user object.
+ * @param {boolean} [force=false] - When true, bypasses all caches and fetches fresh tips.
+ * @returns {Promise<void>} Resolves when tips have been loaded and rendered.
+ * @throws {Error} If the Gemini AI request fails and no cached tips are available.
+ */
 async function loadTips(user, force = false) {
   currentProfile = await getFootprintProfile(user);
   const key = cacheKey(currentProfile);

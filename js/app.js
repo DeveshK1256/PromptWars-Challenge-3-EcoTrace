@@ -4,9 +4,9 @@
  * utility helpers (formatting, toasts, UI), auth flow, navigation, a live
  * global CO₂ counter, and country-emissions table rendering.
  */
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-34";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-35";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -587,7 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-34").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-35").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, CHATBOT_LAZY_DELAY_MS);
   document.addEventListener("click", loadChatbot, { once: true });

@@ -3,9 +3,9 @@
  * @description Profile page logic for EcoTrace. Renders user info, eco stats,
  * footprint history table, and handles profile editing and account deletion.
  */
-import { BADGES } from "./data.js?v=firebase-config-34";
-import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
-import { ecoService } from "./firebase.js?v=firebase-config-34";
+import { BADGES } from "./data.js?v=firebase-config-35";
+import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
+import { ecoService } from "./firebase.js?v=firebase-config-35";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
