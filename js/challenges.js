@@ -27,9 +27,57 @@ function updateWallet(profile) {
 }
 
 /**
+ * Creates a single challenge card element with icon, title, description, metadata, and accept button.
+ * @param {{ id: string, icon: string, title: string, description: string, points: number, deadline: string }} challenge - The challenge data object.
+ * @param {Set<string>} accepted - Set of challenge IDs the user has already accepted.
+ * @returns {HTMLElement} The fully constructed challenge-card article element.
+ */
+function createChallengeCard(challenge, accepted) {
+  const card = document.createElement("article");
+  card.className = "challenge-card";
+  const icon = document.createElement("i");
+  icon.className = `fa-solid ${challenge.icon}`;
+  icon.setAttribute("aria-hidden", "true");
+  const title = document.createElement("h3");
+  title.textContent = challenge.title;
+  const description = document.createElement("p");
+  description.textContent = challenge.description;
+  const meta = document.createElement("div");
+  meta.className = "challenge-meta";
+  const points = document.createElement("span");
+  points.textContent = `+${challenge.points} Green Points`;
+  const deadline = document.createElement("span");
+  deadline.textContent = challenge.deadline;
+  meta.append(points, deadline);
+  const button = document.createElement("button");
+  button.className = "btn btn-primary";
+  button.type = "button";
+  button.textContent = accepted.has(challenge.id) ? "Accepted" : "Accept";
+  button.disabled = accepted.has(challenge.id);
+  button.addEventListener("click", async () => {
+    setButtonBusy(button, true, "Accepting...");
+    try {
+      const result = await ecoService.acceptChallenge(appState.user, challenge);
+      appState.profile = result.profile;
+      updateWallet(appState.profile);
+      renderChallenges(appState.profile);
+      renderBadges(appState.profile);
+      await renderLeaderboard(appState.user);
+      showToast(result.awarded ? `Challenge accepted. +${challenge.points} points!` : "Challenge already accepted.");
+    } catch (error) {
+      console.error(error);
+      showToast("Challenge could not be accepted.", "error");
+    } finally {
+      setButtonBusy(button, false);
+    }
+  });
+  card.append(icon, title, description, meta, button);
+  return card;
+}
+
+/**
  * Renders weekly eco-challenge cards into the challenge grid.
- * Each card shows the challenge icon, title, description, points reward,
- * deadline, and an Accept button. Already-accepted challenges are disabled.
+ * Delegates card creation to {@link createChallengeCard}.
  * @param {Object|null} profile - The user's EcoTrace profile.
  * @param {string[]} [profile.acceptedChallenges=[]] - IDs of challenges the user has accepted.
  * @returns {void}
@@ -39,46 +87,7 @@ function renderChallenges(profile) {
   const accepted = new Set(profile?.acceptedChallenges || []);
   challengeGrid.replaceChildren();
   CHALLENGES.forEach((challenge) => {
-    const card = document.createElement("article");
-    card.className = "challenge-card";
-    const icon = document.createElement("i");
-    icon.className = `fa-solid ${challenge.icon}`;
-    icon.setAttribute("aria-hidden", "true");
-    const title = document.createElement("h3");
-    title.textContent = challenge.title;
-    const description = document.createElement("p");
-    description.textContent = challenge.description;
-    const meta = document.createElement("div");
-    meta.className = "challenge-meta";
-    const points = document.createElement("span");
-    points.textContent = `+${challenge.points} Green Points`;
-    const deadline = document.createElement("span");
-    deadline.textContent = challenge.deadline;
-    meta.append(points, deadline);
-    const button = document.createElement("button");
-    button.className = "btn btn-primary";
-    button.type = "button";
-    button.textContent = accepted.has(challenge.id) ? "Accepted" : "Accept";
-    button.disabled = accepted.has(challenge.id);
-    button.addEventListener("click", async () => {
-      setButtonBusy(button, true, "Accepting...");
-      try {
-        const result = await ecoService.acceptChallenge(appState.user, challenge);
-        appState.profile = result.profile;
-        updateWallet(appState.profile);
-        renderChallenges(appState.profile);
-        renderBadges(appState.profile);
-        await renderLeaderboard(appState.user);
-        showToast(result.awarded ? `Challenge accepted. +${challenge.points} points!` : "Challenge already accepted.");
-      } catch (error) {
-        console.error(error);
-        showToast("Challenge could not be accepted.", "error");
-      } finally {
-        setButtonBusy(button, false);
-      }
-    });
-    card.append(icon, title, description, meta, button);
-    challengeGrid.append(card);
+    challengeGrid.append(createChallengeCard(challenge, accepted));
   });
 }
 

@@ -251,9 +251,9 @@ export function initTimeMachine() {
     const color = getColor(ppm);
     yearEl.textContent = y;
     eraEl.textContent = getEra(y);
-    ppmEl.textContent = ppm + " ppm";
+    ppmEl.textContent = `${ppm  } ppm`;
     ppmEl.style.color = color;
-    fillEl.style.inlineSize = ((ppm / MAX_PPM) * 100) + "%";
+    fillEl.style.inlineSize = `${(ppm / MAX_PPM) * 100  }%`;
     fillEl.style.background = `linear-gradient(90deg, #2f7c64, ${color})`;
   }
   slider.addEventListener("input", update);
@@ -312,19 +312,17 @@ export function initOffsetVisualizer() {
 /* ===== 5. ECO STREAK HEATMAP ===== */
 
 /**
- * Renders a GitHub-style 52-week × 7-day activity heatmap with
- * random demo data, streak counters, and hover tooltips.
- *
- * @returns {void}
+ * Generates heatmap cell data with activity levels and streak counters.
+ * @param {number} days - Number of past days to generate.
+ * @returns {{ cells: Array<{ date: Date, level: number }>, streak: number, maxStreak: number }}
+ *   The cell data array together with current and longest streak lengths.
  */
-export function initEcoHeatmap() {
-  const el = document.querySelector("[data-eco-heatmap]");
-  if (!el) return;
+function createHeatmapCells(days) {
   const today = new Date();
   const cells = [];
   let maxStreak = 0, currentStreak = 0;
 
-  for (let i = HEATMAP_DAYS - 1; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const level = i < 7
@@ -338,21 +336,15 @@ export function initEcoHeatmap() {
       currentStreak = 0;
     }
   }
-  const streak = currentStreak;
+  return { cells, streak: currentStreak, maxStreak };
+}
 
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-  el.replaceChildren();
-
-  const monthsDiv = document.createElement('div');
-  monthsDiv.className = 'heatmap-months';
-  months.forEach(m => {
-    const span = document.createElement('span');
-    span.textContent = m;
-    monthsDiv.append(span);
-  });
-
+/**
+ * Builds the heatmap grid element containing one div per cell.
+ * @param {Array<{ date: Date, level: number }>} cells - The cell data array.
+ * @returns {HTMLDivElement} A container div with day-labels and the cell grid.
+ */
+function buildHeatmapGrid(cells) {
   const containerDiv = document.createElement('div');
   containerDiv.className = 'heatmap-container';
 
@@ -378,6 +370,52 @@ export function initEcoHeatmap() {
   });
 
   containerDiv.append(daysDiv, gridDiv);
+  return containerDiv;
+}
+
+/**
+ * Builds the heatmap legend element showing activity level colours.
+ * @returns {HTMLDivElement} The legend div with level-0 through level-4 cells.
+ */
+function buildHeatmapLegend() {
+  const legendDiv = document.createElement('div');
+  legendDiv.className = 'heatmap-legend';
+  legendDiv.append('Less');
+  for (let lvl = 0; lvl <= 4; lvl++) {
+    const lc = document.createElement('div');
+    lc.className = 'heatmap-legend-cell heatmap-cell';
+    lc.dataset.level = lvl;
+    legendDiv.append(lc);
+  }
+  legendDiv.append('More');
+  return legendDiv;
+}
+
+/**
+ * Renders a GitHub-style 52-week × 7-day activity heatmap with
+ * random demo data, streak counters, and hover tooltips.
+ *
+ * @returns {void}
+ */
+export function initEcoHeatmap() {
+  const el = document.querySelector("[data-eco-heatmap]");
+  if (!el) return;
+  const { cells, streak, maxStreak } = createHeatmapCells(HEATMAP_DAYS);
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  el.replaceChildren();
+
+  const monthsDiv = document.createElement('div');
+  monthsDiv.className = 'heatmap-months';
+  months.forEach(m => {
+    const span = document.createElement('span');
+    span.textContent = m;
+    monthsDiv.append(span);
+  });
+
+  const containerDiv = buildHeatmapGrid(cells);
 
   const statsDiv = document.createElement('div');
   statsDiv.className = 'heatmap-stats';
@@ -391,21 +429,72 @@ export function initEcoHeatmap() {
   maxStreakDiv.append('🏆 Longest Streak: ', maxStreakStrong);
   statsDiv.append(currentStreakDiv, maxStreakDiv);
 
-  const legendDiv = document.createElement('div');
-  legendDiv.className = 'heatmap-legend';
-  legendDiv.append('Less');
-  for (let lvl = 0; lvl <= 4; lvl++) {
-    const lc = document.createElement('div');
-    lc.className = 'heatmap-legend-cell heatmap-cell';
-    lc.dataset.level = lvl;
-    legendDiv.append(lc);
-  }
-  legendDiv.append('More');
+  const legendDiv = buildHeatmapLegend();
 
   el.append(monthsDiv, containerDiv, statsDiv, legendDiv);
 }
 
 /* ===== 6. SHARE SCORE CARD ===== */
+
+/**
+ * Draws the branded score-card content onto a canvas 2D context.
+ * Renders the gradient background, decorative circle, branding text,
+ * CO₂ saved, Green Points, badge count, and the current date.
+ * @param {CanvasRenderingContext2D} ctx - The 2D rendering context.
+ * @param {number} width - Canvas width in pixels.
+ * @param {number} height - Canvas height in pixels.
+ * @returns {void}
+ */
+function drawScoreCard(ctx, width, height) {
+  const grd = ctx.createLinearGradient(0, 0, width, height);
+  grd.addColorStop(0, "#1d5d4b");
+  grd.addColorStop(1, "#0d1a15");
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = "rgba(167,201,87,0.08)";
+  ctx.beginPath();
+  ctx.arc(480, 60, 180, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 28px 'Space Grotesk',sans-serif";
+  ctx.fillText("🌍 EcoTrace", 32, 50);
+
+  ctx.fillStyle = "#a7c957";
+  ctx.font = "bold 14px sans-serif";
+  ctx.fillText("MY CARBON SCORECARD", 32, 80);
+
+  const saved = document.querySelector("[data-stat-saved]")?.textContent || "0 kg";
+  const points = document.querySelector("[data-stat-points]")?.textContent || "0";
+  const badges = document.querySelector("[data-stat-badges]")?.textContent || "0";
+
+  ctx.fillStyle = "#4ecb8e";
+  ctx.font = "bold 48px 'Space Grotesk',sans-serif";
+  ctx.fillText(saved, 32, 145);
+
+  ctx.fillStyle = "#b8cfc2";
+  ctx.font = "16px sans-serif";
+  ctx.fillText("CO₂ Saved", 32, 170);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 32px 'Space Grotesk',sans-serif";
+  ctx.fillText(points, 32, 225);
+  ctx.fillText(badges, 220, 225);
+
+  ctx.fillStyle = "#8ba99a";
+  ctx.font = "14px sans-serif";
+  ctx.fillText("Green Points", 32, 248);
+  ctx.fillText("Badges Earned", 220, 248);
+
+  ctx.fillStyle = "#536b5e";
+  ctx.font = "12px sans-serif";
+  const dateStr = new Date().toLocaleDateString("en-IN", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+  ctx.fillText(dateStr, 32, 310);
+  ctx.fillText("eco-tracee.netlify.app", 32, 328);
+}
 
 /**
  * Generates a downloadable PNG score-card canvas showing the user's
@@ -421,54 +510,7 @@ export function initShareCard() {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     const ctx = canvas.getContext("2d");
-    const grd = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    grd.addColorStop(0, "#1d5d4b");
-    grd.addColorStop(1, "#0d1a15");
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    ctx.fillStyle = "rgba(167,201,87,0.08)";
-    ctx.beginPath();
-    ctx.arc(480, 60, 180, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 28px 'Space Grotesk',sans-serif";
-    ctx.fillText("🌍 EcoTrace", 32, 50);
-
-    ctx.fillStyle = "#a7c957";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText("MY CARBON SCORECARD", 32, 80);
-
-    const saved = document.querySelector("[data-stat-saved]")?.textContent || "0 kg";
-    const points = document.querySelector("[data-stat-points]")?.textContent || "0";
-    const badges = document.querySelector("[data-stat-badges]")?.textContent || "0";
-
-    ctx.fillStyle = "#4ecb8e";
-    ctx.font = "bold 48px 'Space Grotesk',sans-serif";
-    ctx.fillText(saved, 32, 145);
-
-    ctx.fillStyle = "#b8cfc2";
-    ctx.font = "16px sans-serif";
-    ctx.fillText("CO₂ Saved", 32, 170);
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 32px 'Space Grotesk',sans-serif";
-    ctx.fillText(points, 32, 225);
-    ctx.fillText(badges, 220, 225);
-
-    ctx.fillStyle = "#8ba99a";
-    ctx.font = "14px sans-serif";
-    ctx.fillText("Green Points", 32, 248);
-    ctx.fillText("Badges Earned", 220, 248);
-
-    ctx.fillStyle = "#536b5e";
-    ctx.font = "12px sans-serif";
-    const dateStr = new Date().toLocaleDateString("en-IN", {
-      day: "numeric", month: "long", year: "numeric",
-    });
-    ctx.fillText(dateStr, 32, 310);
-    ctx.fillText("eco-tracee.netlify.app", 32, 328);
+    drawScoreCard(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     canvas.toBlob(blob => {
       const a = document.createElement("a");
@@ -603,41 +645,53 @@ export function initPledgeWall() {
   ];
   const pledges = JSON.parse(localStorage.getItem(PLEDGES_KEY) || "null") || defaultPledges;
 
+  /**
+   * Creates a single pledge card article element.
+   * @param {{ emoji: string, text: string, author: string, likes: number, liked?: boolean }} pledge - The pledge data object.
+   * @param {number} index - The pledge's index in the pledges array.
+   * @param {function(): void} onLike - Callback invoked when the like button is clicked.
+   * @returns {HTMLElement} The fully constructed pledge card article.
+   */
+  function createPledgeCard(pledge, index, onLike) {
+    const article = document.createElement('article');
+    article.className = 'pledge-card';
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'pledge-text';
+    textDiv.textContent = `${pledge.emoji} "${pledge.text}"`;
+
+    const footer = document.createElement('div');
+    footer.className = 'pledge-footer';
+
+    const authorSpan = document.createElement('span');
+    authorSpan.className = 'pledge-author';
+    authorSpan.textContent = `\u2014 ${pledge.author}`;
+
+    const likeBtn = document.createElement('button');
+    likeBtn.className = `pledge-like${pledge.liked ? ' liked' : ''}`;
+    likeBtn.dataset.pledgeIdx = index;
+    const heartIcon = document.createElement('i');
+    heartIcon.className = `fa-${pledge.liked ? 'solid' : 'regular'} fa-heart`;
+    likeBtn.append(heartIcon, ` ${pledge.likes}`);
+
+    likeBtn.addEventListener('click', onLike);
+
+    footer.append(authorSpan, likeBtn);
+    article.append(textDiv, footer);
+    return article;
+  }
+
   /** Re-renders all pledge cards and wires up like buttons. */
   function render() {
     el.replaceChildren();
     pledges.forEach((p, i) => {
-      const article = document.createElement('article');
-      article.className = 'pledge-card';
-
-      const textDiv = document.createElement('div');
-      textDiv.className = 'pledge-text';
-      textDiv.textContent = `${p.emoji} "${p.text}"`;
-
-      const footer = document.createElement('div');
-      footer.className = 'pledge-footer';
-
-      const authorSpan = document.createElement('span');
-      authorSpan.className = 'pledge-author';
-      authorSpan.textContent = `\u2014 ${p.author}`;
-
-      const likeBtn = document.createElement('button');
-      likeBtn.className = `pledge-like${p.liked ? ' liked' : ''}`;
-      likeBtn.dataset.pledgeIdx = i;
-      const heartIcon = document.createElement('i');
-      heartIcon.className = `fa-${p.liked ? 'solid' : 'regular'} fa-heart`;
-      likeBtn.append(heartIcon, ` ${p.likes}`);
-
-      likeBtn.addEventListener('click', () => {
+      const card = createPledgeCard(p, i, () => {
         pledges[i].liked = !pledges[i].liked;
         pledges[i].likes += pledges[i].liked ? 1 : -1;
         localStorage.setItem(PLEDGES_KEY, JSON.stringify(pledges));
         render();
       });
-
-      footer.append(authorSpan, likeBtn);
-      article.append(textDiv, footer);
-      el.append(article);
+      el.append(card);
     });
   }
   render();
@@ -711,7 +765,7 @@ export function initFootprintComparison() {
 
   setTimeout(() => {
     el.querySelectorAll("[data-width]").forEach(bar => {
-      bar.style.inlineSize = bar.dataset.width + "%";
+      bar.style.inlineSize = `${bar.dataset.width  }%`;
     });
   }, COMPARISON_ANIMATE_DELAY_MS);
 }

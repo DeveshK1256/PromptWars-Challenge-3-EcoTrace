@@ -196,16 +196,14 @@ function markActiveNav() {
 }
 
 /**
- * Initialises the responsive mobile navigation: toggle button, backdrop
- * dismiss, Escape-key close, and auto-close on desktop resize.
+ * Sets up the mobile navigation menu behaviour: click-to-toggle, backdrop
+ * dismiss, Escape-key close, link-click close, and auto-close on desktop resize.
+ * @param {HTMLElement} toggle      - The hamburger / menu toggle button.
+ * @param {HTMLElement} menu        - The navigation menu element.
+ * @param {HTMLElement|null} nav    - The closest `.nav` ancestor for outside-click detection.
+ * @param {HTMLElement|null} toggleLabel - The `.sr-only` label inside the toggle button.
  */
-function initNavigation() {
-  const toggle = document.querySelector("[data-nav-toggle]");
-  const menu = document.querySelector("[data-nav-menu]");
-  if (!toggle || !menu) return;
-  const nav = toggle.closest(".nav") || menu.parentElement;
-  const toggleLabel = toggle.querySelector(".sr-only");
-
+function setupMobileMenu(toggle, menu, nav, toggleLabel) {
   const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
   const setMenuOpen = (open, returnFocus = false) => {
     toggle.setAttribute("aria-expanded", String(open));
@@ -235,6 +233,20 @@ function initNavigation() {
   window.addEventListener("resize", () => {
     if (window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT_PX}px)`).matches) setMenuOpen(false);
   });
+}
+
+/**
+ * Initialises the responsive mobile navigation: toggle button, backdrop
+ * dismiss, Escape-key close, and auto-close on desktop resize.
+ */
+function initNavigation() {
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const menu = document.querySelector("[data-nav-menu]");
+  if (!toggle || !menu) return;
+  const nav = toggle.closest(".nav") || menu.parentElement;
+  const toggleLabel = toggle.querySelector(".sr-only");
+
+  setupMobileMenu(toggle, menu, nav, toggleLabel);
 }
 
 /**
@@ -287,17 +299,11 @@ function initCountryEmissions() {
     });
   }
 
-  function renderTable() {
-    const data = COUNTRY_EMISSIONS[activeYear];
-    if (!data) return;
-    const totalEmissions = data.reduce((sum, c) => sum + c.emissions, 0);
-    const maxEmissions = data[0].emissions;
-
-    const table = document.createElement("table");
-    table.className = "country-table";
-    table.setAttribute("role", "table");
-    table.setAttribute("aria-label", `CO₂ emissions by country in ${activeYear}`);
-
+  /**
+   * Creates the `<thead>` element for the country-emissions table.
+   * @returns {HTMLTableSectionElement} The assembled table header.
+   */
+  function createTableHeader() {
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
     const headers = [
@@ -314,53 +320,79 @@ function initCountryEmissions() {
       headerRow.append(th);
     });
     thead.append(headerRow);
+    return thead;
+  }
 
+  /**
+   * Creates a single `<tr>` element for one country-emissions entry.
+   * @param {{ country: string, flag: string, emissions: number }} entry - The country data.
+   * @param {number} index          - Zero-based position in the sorted list.
+   * @param {number} totalEmissions - Sum of all countries' emissions for percentage calc.
+   * @param {number} maxEmissions   - Highest single-country emission for bar-width calc.
+   * @returns {HTMLTableRowElement} The assembled table row.
+   */
+  function createTableRow(entry, index, totalEmissions, maxEmissions) {
+    const pct = ((entry.emissions / totalEmissions) * 100).toFixed(1);
+    const barWidth = ((entry.emissions / maxEmissions) * 100).toFixed(1);
+    const rankClass = index < 3 ? `ct-rank-top ct-rank-${index + 1}` : "";
+
+    const tr = document.createElement("tr");
+    tr.className = "ct-row";
+
+    const rankCell = document.createElement("td");
+    rankCell.className = "ct-rank-cell";
+    const rankBadge = document.createElement("span");
+    rankBadge.className = `ct-rank-badge ${rankClass}`;
+    rankBadge.textContent = String(index + 1);
+    rankCell.append(rankBadge);
+
+    const countryCell = document.createElement("td");
+    countryCell.className = "ct-country-cell";
+    const flagSpan = document.createElement("span");
+    flagSpan.className = "ct-flag";
+    flagSpan.textContent = entry.flag;
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "ct-name";
+    nameSpan.textContent = entry.country;
+    countryCell.append(flagSpan, nameSpan);
+
+    const emissionsCell = document.createElement("td");
+    emissionsCell.className = "ct-emissions-cell";
+    emissionsCell.textContent = entry.emissions.toLocaleString();
+
+    const barCell = document.createElement("td");
+    barCell.className = "ct-bar-cell";
+    const barTrack = document.createElement("div");
+    barTrack.className = "ct-bar-track";
+    const barFill = document.createElement("div");
+    barFill.className = "ct-bar-fill";
+    barFill.style.inlineSize = `${barWidth}%`;
+    barTrack.append(barFill);
+    barCell.append(barTrack);
+
+    const pctCell = document.createElement("td");
+    pctCell.className = "ct-pct-cell";
+    pctCell.textContent = `${pct}%`;
+
+    tr.append(rankCell, countryCell, emissionsCell, barCell, pctCell);
+    return tr;
+  }
+
+  function renderTable() {
+    const data = COUNTRY_EMISSIONS[activeYear];
+    if (!data) return;
+    const totalEmissions = data.reduce((sum, c) => sum + c.emissions, 0);
+    const maxEmissions = data[0].emissions;
+
+    const table = document.createElement("table");
+    table.className = "country-table";
+    table.setAttribute("role", "table");
+    table.setAttribute("aria-label", `CO₂ emissions by country in ${activeYear}`);
+
+    const thead = createTableHeader();
     const tbody = document.createElement("tbody");
     data.forEach((entry, index) => {
-      const pct = ((entry.emissions / totalEmissions) * 100).toFixed(1);
-      const barWidth = ((entry.emissions / maxEmissions) * 100).toFixed(1);
-      const rankClass = index < 3 ? `ct-rank-top ct-rank-${index + 1}` : "";
-
-      const tr = document.createElement("tr");
-      tr.className = "ct-row";
-
-      const rankCell = document.createElement("td");
-      rankCell.className = "ct-rank-cell";
-      const rankBadge = document.createElement("span");
-      rankBadge.className = `ct-rank-badge ${rankClass}`;
-      rankBadge.textContent = String(index + 1);
-      rankCell.append(rankBadge);
-
-      const countryCell = document.createElement("td");
-      countryCell.className = "ct-country-cell";
-      const flagSpan = document.createElement("span");
-      flagSpan.className = "ct-flag";
-      flagSpan.textContent = entry.flag;
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "ct-name";
-      nameSpan.textContent = entry.country;
-      countryCell.append(flagSpan, nameSpan);
-
-      const emissionsCell = document.createElement("td");
-      emissionsCell.className = "ct-emissions-cell";
-      emissionsCell.textContent = entry.emissions.toLocaleString();
-
-      const barCell = document.createElement("td");
-      barCell.className = "ct-bar-cell";
-      const barTrack = document.createElement("div");
-      barTrack.className = "ct-bar-track";
-      const barFill = document.createElement("div");
-      barFill.className = "ct-bar-fill";
-      barFill.style.inlineSize = `${barWidth}%`;
-      barTrack.append(barFill);
-      barCell.append(barTrack);
-
-      const pctCell = document.createElement("td");
-      pctCell.className = "ct-pct-cell";
-      pctCell.textContent = `${pct}%`;
-
-      tr.append(rankCell, countryCell, emissionsCell, barCell, pctCell);
-      tbody.append(tr);
+      tbody.append(createTableRow(entry, index, totalEmissions, maxEmissions));
     });
 
     table.append(thead, tbody);
@@ -438,6 +470,161 @@ async function initAuth() {
 }
 
 /**
+ * Attaches click handlers to all `[data-google-signin]` buttons to initiate
+ * Google sign-in, update app state, and redirect if a return-to URL is saved.
+ */
+function setupGoogleSignIn() {
+  document.querySelectorAll("[data-google-signin]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      setButtonBusy(button, true, "Opening Google...");
+      try {
+        const user = await ecoService.signInWithGoogle();
+        appState.user = user;
+        appState.profile = await ecoService.getProfile(user);
+        updateAuthUI(appState.user, appState.profile);
+        showToast("Signed in with Google.");
+        const returnTo = sessionStorage.getItem("ecotrace.returnTo");
+        if (returnTo) {
+          sessionStorage.removeItem("ecotrace.returnTo");
+          window.location.href = returnTo;
+        }
+      } catch (error) {
+        if (error?.code !== "auth/firebase-config-missing") console.error(error);
+        showToast(
+          error?.code === "auth/firebase-config-missing"
+            ? "Google sign-in needs full Firebase setup. Email accounts still work."
+            : `Google sign-in failed: ${error?.code || "unknown"} — ${error?.message || "Please try again."}`,
+          "error",
+        );
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+  });
+}
+
+/**
+ * Attaches click handlers to all `[data-signout]` buttons to sign the user
+ * out, refresh app state, and redirect away from protected pages.
+ */
+function setupSignOut() {
+  document.querySelectorAll("[data-signout]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      setButtonBusy(button, true, "Signing out...");
+      try {
+        await ecoService.signOut();
+        if (!hasFirebaseConfig()) {
+          appState.user = await ecoService.getCurrentUser();
+          appState.profile = await ecoService.getProfile(appState.user);
+          updateAuthUI(appState.user, appState.profile);
+          userReadyHandlers.forEach((handler) => handler(appState.user, appState.profile));
+        }
+        showToast("Signed out safely.");
+        if (document.body.matches("[data-auth-required]") && hasFirebaseConfig()) {
+          window.location.href = "index.html";
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("Sign out failed. Please try again.", "error");
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+  });
+}
+
+/**
+ * Attaches submit handlers to all `[data-auth-form]` forms to handle both
+ * sign-in and sign-up via email/password, with validation and error reporting.
+ * @param {(error: object) => boolean} isExpectedAuthError - Predicate for expected auth errors.
+ * @param {(error: object, action: string) => string} getAuthErrorMessage - Maps errors to user messages.
+ */
+function setupSignInForm(isExpectedAuthError, getAuthErrorMessage) {
+  document.querySelectorAll("[data-auth-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitter = event.submitter || form.querySelector("[type='submit']");
+      const action = submitter?.value || submitter?.dataset.authAction || "signin";
+      const data = new FormData(form);
+      const email = String(data.get("email") || "").trim();
+      const password = String(data.get("password") || "");
+      const displayName = String(data.get("displayName") || "").trim() || "EcoTracer";
+      if (!email || password.length < MIN_PASSWORD_LENGTH) {
+        showToast("Use a valid email and a password with at least 6 characters.", "error");
+        return;
+      }
+      setButtonBusy(submitter, true, action === "signup" ? "Creating..." : "Signing in...");
+      try {
+        const user =
+          action === "signup"
+            ? await ecoService.createEmailAccount(email, password, displayName)
+            : await ecoService.signInWithEmail(email, password);
+        appState.user = user;
+        appState.profile = await ecoService.getProfile(user);
+        updateAuthUI(appState.user, appState.profile);
+        showToast(action === "signup" ? "EcoTrace account created." : "Signed in successfully.");
+        form.reset();
+      } catch (error) {
+        if (!isExpectedAuthError(error)) console.error(error);
+        showToast(getAuthErrorMessage(error, action), "error");
+      } finally {
+        setButtonBusy(submitter, false);
+      }
+    });
+  });
+}
+
+/**
+ * Attaches click handlers to all `[data-toggle-password]` buttons to toggle
+ * password field visibility between plain-text and masked modes.
+ */
+function setupPasswordToggles() {
+  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const wrapper = btn.closest(".password-wrapper");
+      const input = wrapper?.querySelector("input");
+      if (!input) return;
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      btn.replaceChildren();
+      const icon = document.createElement('i');
+      icon.className = `fa-solid fa-eye${isPassword ? '' : '-slash'}`;
+      icon.setAttribute('aria-hidden', 'true');
+      btn.append(icon);
+      btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+    });
+  });
+}
+
+/**
+ * Attaches click handlers to all `[data-forgot-password]` buttons to send
+ * a password-reset email to the address currently entered in the auth form.
+ */
+function setupForgotPassword() {
+  document.querySelectorAll("[data-forgot-password]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const form = btn.closest("[data-auth-form]") || document.querySelector("[data-auth-form]");
+      const email = form ? String(new FormData(form).get("email") || "").trim() : "";
+      if (!email) {
+        showToast("Enter your email address first, then click Forgot password.", "error");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+      try {
+        await ecoService.sendPasswordReset(email);
+        showToast(`Password reset email sent to ${  email  }! Check your inbox and spam folder.`, "success");
+      } catch (error) {
+        showToast(error.message || "Could not send reset email.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Forgot password?";
+      }
+    });
+  });
+}
+
+/**
  * Wires up all authentication-related DOM actions: Google sign-in buttons,
  * email/password forms, sign-out buttons, password-visibility toggles,
  * and "forgot password" links.
@@ -473,128 +660,11 @@ function initAuthActions() {
       : `Sign-in failed: ${error?.code || "unknown"} — ${error?.message || "Check your details and try again."}`;
   };
 
-  document.querySelectorAll("[data-google-signin]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      setButtonBusy(button, true, "Opening Google...");
-      try {
-        const user = await ecoService.signInWithGoogle();
-        appState.user = user;
-        appState.profile = await ecoService.getProfile(user);
-        updateAuthUI(appState.user, appState.profile);
-        showToast("Signed in with Google.");
-        const returnTo = sessionStorage.getItem("ecotrace.returnTo");
-        if (returnTo) {
-          sessionStorage.removeItem("ecotrace.returnTo");
-          window.location.href = returnTo;
-        }
-      } catch (error) {
-        if (error?.code !== "auth/firebase-config-missing") console.error(error);
-        showToast(
-          error?.code === "auth/firebase-config-missing"
-            ? "Google sign-in needs full Firebase setup. Email accounts still work."
-            : `Google sign-in failed: ${error?.code || "unknown"} — ${error?.message || "Please try again."}`,
-          "error",
-        );
-      } finally {
-        setButtonBusy(button, false);
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-signout]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      setButtonBusy(button, true, "Signing out...");
-      try {
-        await ecoService.signOut();
-        if (!hasFirebaseConfig()) {
-          appState.user = await ecoService.getCurrentUser();
-          appState.profile = await ecoService.getProfile(appState.user);
-          updateAuthUI(appState.user, appState.profile);
-          userReadyHandlers.forEach((handler) => handler(appState.user, appState.profile));
-        }
-        showToast("Signed out safely.");
-        if (document.body.matches("[data-auth-required]") && hasFirebaseConfig()) {
-          window.location.href = "index.html";
-        }
-      } catch (error) {
-        console.error(error);
-        showToast("Sign out failed. Please try again.", "error");
-      } finally {
-        setButtonBusy(button, false);
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-auth-form]").forEach((form) => {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const submitter = event.submitter || form.querySelector("[type='submit']");
-      const action = submitter?.value || submitter?.dataset.authAction || "signin";
-      const data = new FormData(form);
-      const email = String(data.get("email") || "").trim();
-      const password = String(data.get("password") || "");
-      const displayName = String(data.get("displayName") || "").trim() || "EcoTracer";
-      if (!email || password.length < MIN_PASSWORD_LENGTH) {
-        showToast("Use a valid email and a password with at least 6 characters.", "error");
-        return;
-      }
-      setButtonBusy(submitter, true, action === "signup" ? "Creating..." : "Signing in...");
-      try {
-        const user =
-          action === "signup"
-            ? await ecoService.createEmailAccount(email, password, displayName)
-            : await ecoService.signInWithEmail(email, password);
-        appState.user = user;
-        appState.profile = await ecoService.getProfile(user);
-        updateAuthUI(appState.user, appState.profile);
-        showToast(action === "signup" ? "EcoTrace account created." : "Signed in successfully.");
-        form.reset();
-      } catch (error) {
-        if (!isExpectedAuthError(error)) console.error(error);
-        showToast(getAuthErrorMessage(error, action), "error");
-      } finally {
-        setButtonBusy(submitter, false);
-      }
-    });
-  });
-
-  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const wrapper = btn.closest(".password-wrapper");
-      const input = wrapper?.querySelector("input");
-      if (!input) return;
-      const isPassword = input.type === "password";
-      input.type = isPassword ? "text" : "password";
-      btn.replaceChildren();
-      const icon = document.createElement('i');
-      icon.className = `fa-solid fa-eye${isPassword ? '' : '-slash'}`;
-      icon.setAttribute('aria-hidden', 'true');
-      btn.append(icon);
-      btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
-    });
-  });
-
-  document.querySelectorAll("[data-forgot-password]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const form = btn.closest("[data-auth-form]") || document.querySelector("[data-auth-form]");
-      const email = form ? String(new FormData(form).get("email") || "").trim() : "";
-      if (!email) {
-        showToast("Enter your email address first, then click Forgot password.", "error");
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = "Sending...";
-      try {
-        await ecoService.sendPasswordReset(email);
-        showToast("Password reset email sent to " + email + "! Check your inbox and spam folder.", "success");
-      } catch (error) {
-        showToast(error.message || "Could not send reset email.", "error");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Forgot password?";
-      }
-    });
-  });
+  setupGoogleSignIn();
+  setupSignOut();
+  setupSignInForm(isExpectedAuthError, getAuthErrorMessage);
+  setupPasswordToggles();
+  setupForgotPassword();
 }
 
 /**

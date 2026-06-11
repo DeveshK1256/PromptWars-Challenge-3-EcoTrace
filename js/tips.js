@@ -86,9 +86,55 @@ function renderTabs() {
 }
 
 /**
- * Renders the tip cards into the grid, filtered by the active category.
- * Each card shows the tip's category, title, body, CO₂ saving, difficulty,
- * and a "Mark as Done" button that awards Green Points on completion.
+ * Creates a single tip card element with category, title, body, metadata, and a completion button.
+ * @param {{ id: string, category: string, title: string, body: string, savingKg: number, difficulty: string }} tip - The tip data object.
+ * @param {Set<string>} completed - Set of tip IDs the user has already completed.
+ * @returns {HTMLElement} The fully constructed tip-card article element.
+ */
+function createTipCard(tip, completed) {
+  const card = document.createElement("article");
+  card.className = "tip-card";
+  const category = document.createElement("span");
+  category.className = "eyebrow";
+  category.textContent = tip.category;
+  const title = document.createElement("h3");
+  title.textContent = tip.title;
+  const body = document.createElement("p");
+  body.textContent = tip.body;
+  const meta = document.createElement("div");
+  meta.className = "tip-meta";
+  const saving = document.createElement("span");
+  saving.textContent = `${tip.savingKg} kg CO₂ saved`;
+  const difficulty = document.createElement("span");
+  difficulty.className = `difficulty difficulty-${tip.difficulty.toLowerCase()}`;
+  difficulty.textContent = tip.difficulty;
+  meta.append(saving, difficulty);
+  const action = document.createElement("button");
+  action.className = "btn btn-small btn-primary";
+  action.type = "button";
+  action.textContent = completed.has(tip.id) ? "Done ✅" : "Mark as Done ✅";
+  action.disabled = completed.has(tip.id);
+  action.addEventListener("click", async () => {
+    setButtonBusy(action, true, "Saving...");
+    try {
+      const result = await ecoService.completeTip(appState.user, tip);
+      appState.profile = result.profile;
+      showToast(result.awarded ? "Nice, +10 Green Points!" : "You already earned points for this tip.");
+      renderTips();
+    } catch (error) {
+      console.error(error);
+      showToast("Could not save tip completion.", "error");
+    } finally {
+      setButtonBusy(action, false);
+    }
+  });
+  card.append(category, title, body, meta, action);
+  return card;
+}
+
+/**
+ * Renders tip cards into the grid, filtered by the active category.
+ * Delegates card creation to {@link createTipCard}.
  * @returns {void}
  */
 function renderTips() {
@@ -98,44 +144,7 @@ function renderTips() {
     activeCategory === "All" ? currentTips : currentTips.filter((tip) => tip.category === activeCategory);
   grid.replaceChildren();
   visibleTips.forEach((tip) => {
-    const card = document.createElement("article");
-    card.className = "tip-card";
-    const category = document.createElement("span");
-    category.className = "eyebrow";
-    category.textContent = tip.category;
-    const title = document.createElement("h3");
-    title.textContent = tip.title;
-    const body = document.createElement("p");
-    body.textContent = tip.body;
-    const meta = document.createElement("div");
-    meta.className = "tip-meta";
-    const saving = document.createElement("span");
-    saving.textContent = `${tip.savingKg} kg CO₂ saved`;
-    const difficulty = document.createElement("span");
-    difficulty.className = `difficulty difficulty-${tip.difficulty.toLowerCase()}`;
-    difficulty.textContent = tip.difficulty;
-    meta.append(saving, difficulty);
-    const action = document.createElement("button");
-    action.className = "btn btn-small btn-primary";
-    action.type = "button";
-    action.textContent = completed.has(tip.id) ? "Done ✅" : "Mark as Done ✅";
-    action.disabled = completed.has(tip.id);
-    action.addEventListener("click", async () => {
-      setButtonBusy(action, true, "Saving...");
-      try {
-        const result = await ecoService.completeTip(appState.user, tip);
-        appState.profile = result.profile;
-        showToast(result.awarded ? "Nice, +10 Green Points!" : "You already earned points for this tip.");
-        renderTips();
-      } catch (error) {
-        console.error(error);
-        showToast("Could not save tip completion.", "error");
-      } finally {
-        setButtonBusy(action, false);
-      }
-    });
-    card.append(category, title, body, meta, action);
-    grid.append(card);
+    grid.append(createTipCard(tip, completed));
   });
 }
 

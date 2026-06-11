@@ -99,9 +99,70 @@ function renderTabs() {
 }
 
 /**
+ * Creates a single article card element with read-earn and share buttons.
+ * @param {{ id: string, category: string, title: string, source: string, url: string, summary: string, readMinutes: number }} article - The article data object.
+ * @param {Set<string>} readArticles - Set of article IDs the user has already read.
+ * @returns {HTMLElement} The fully constructed news-card article element.
+ */
+function createArticleCard(article, readArticles) {
+  const card = document.createElement("article");
+  card.className = "news-card";
+  const category = document.createElement("span");
+  category.className = "eyebrow";
+  category.textContent = article.category;
+  const title = document.createElement("h3");
+  title.textContent = article.title;
+  const summary = document.createElement("p");
+  summary.textContent = article.summary;
+  const meta = document.createElement("p");
+  meta.className = "muted";
+  meta.textContent = `${article.source} • ${article.readMinutes} min read`;
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+  const read = document.createElement("button");
+  read.className = "btn btn-small btn-primary";
+  read.type = "button";
+  read.textContent = readArticles.has(article.id) ? "Read + Earned" : "Read & Earn 5 Points";
+  read.disabled = readArticles.has(article.id);
+  read.addEventListener("click", async () => {
+    setButtonBusy(read, true, "Saving...");
+    try {
+      window.open(article.url, "_blank", "noopener,noreferrer");
+      const result = await ecoService.markArticleRead(appState.user, article);
+      appState.profile = result.profile;
+      showToast(result.awarded ? "Article logged. +5 Green Points!" : "You already earned points for this article.");
+      renderArticles();
+    } catch (error) {
+      console.error(error);
+      showToast("Could not award article points.", "error");
+    } finally {
+      setButtonBusy(read, false);
+    }
+  });
+  const share = document.createElement("button");
+  share.className = "btn btn-small btn-secondary";
+  share.type = "button";
+  share.textContent = "Share";
+  share.addEventListener("click", async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: article.title, text: article.summary, url: article.url });
+      } else {
+        await navigator.clipboard.writeText(article.url);
+        showToast("Article link copied.");
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  });
+  actions.append(read, share);
+  card.append(category, title, summary, meta, actions);
+  return card;
+}
+
+/**
  * Renders article news cards into the feed grid, filtered by the active topic.
- * Each card includes a "Read & Earn" button that awards Green Points and a
- * share button using the Web Share API (falls back to clipboard copy).
+ * Delegates card creation to {@link createArticleCard}.
  * @returns {void}
  */
 function renderArticles() {
@@ -111,59 +172,7 @@ function renderArticles() {
   const visible = filtered.slice(0, DISPLAY_COUNT);
   grid.replaceChildren();
   visible.forEach((article) => {
-    const card = document.createElement("article");
-    card.className = "news-card";
-    const category = document.createElement("span");
-    category.className = "eyebrow";
-    category.textContent = article.category;
-    const title = document.createElement("h3");
-    title.textContent = article.title;
-    const summary = document.createElement("p");
-    summary.textContent = article.summary;
-    const meta = document.createElement("p");
-    meta.className = "muted";
-    meta.textContent = `${article.source} • ${article.readMinutes} min read`;
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
-    const read = document.createElement("button");
-    read.className = "btn btn-small btn-primary";
-    read.type = "button";
-    read.textContent = readArticles.has(article.id) ? "Read + Earned" : "Read & Earn 5 Points";
-    read.disabled = readArticles.has(article.id);
-    read.addEventListener("click", async () => {
-      setButtonBusy(read, true, "Saving...");
-      try {
-        window.open(article.url, "_blank", "noopener,noreferrer");
-        const result = await ecoService.markArticleRead(appState.user, article);
-        appState.profile = result.profile;
-        showToast(result.awarded ? "Article logged. +5 Green Points!" : "You already earned points for this article.");
-        renderArticles();
-      } catch (error) {
-        console.error(error);
-        showToast("Could not award article points.", "error");
-      } finally {
-        setButtonBusy(read, false);
-      }
-    });
-    const share = document.createElement("button");
-    share.className = "btn btn-small btn-secondary";
-    share.type = "button";
-    share.textContent = "Share";
-    share.addEventListener("click", async () => {
-      try {
-        if (navigator.share) {
-          await navigator.share({ title: article.title, text: article.summary, url: article.url });
-        } else {
-          await navigator.clipboard.writeText(article.url);
-          showToast("Article link copied.");
-        }
-      } catch (error) {
-        console.warn(error);
-      }
-    });
-    actions.append(read, share);
-    card.append(category, title, summary, meta, actions);
-    grid.append(card);
+    grid.append(createArticleCard(article, readArticles));
   });
 }
 
