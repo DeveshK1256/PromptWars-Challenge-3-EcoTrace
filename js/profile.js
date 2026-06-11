@@ -1,6 +1,6 @@
-import { BADGES } from "./data.js?v=firebase-config-15";
-import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-15";
-import { ecoService } from "./firebase.js?v=firebase-config-15";
+import { BADGES } from "./data.js?v=firebase-config-16";
+import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-16";
+import { ecoService } from "./firebase.js?v=firebase-config-16";
 
 const form = document.querySelector("[data-profile-form]");
 const historyBody = document.querySelector("[data-history-table]");
@@ -86,12 +86,34 @@ form?.addEventListener("submit", async (event) => {
   }
 });
 
-document.querySelector("[data-open-delete]")?.addEventListener("click", () => {
-  if (deleteDialog?.showModal) deleteDialog.showModal();
+const deleteTrigger = document.querySelector("[data-open-delete]");
+deleteTrigger?.addEventListener("click", () => {
+  if (deleteDialog?.showModal) {
+    deleteDialog.showModal();
+    const firstFocusable = deleteDialog.querySelector("button, input, [tabindex]");
+    if (firstFocusable) firstFocusable.focus();
+  }
 });
 
 document.querySelector("[data-close-delete]")?.addEventListener("click", () => {
   deleteDialog?.close();
+  deleteTrigger?.focus();
+});
+
+/* Focus trap: keep Tab cycling within the dialog */
+deleteDialog?.addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  const focusables = [...deleteDialog.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])')];
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
 });
 
 document.querySelector("[data-confirm-delete]")?.addEventListener("click", async (event) => {

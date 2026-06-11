@@ -1,6 +1,6 @@
-import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-15";
-import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-15";
-import { setButtonBusy, showToast } from "./app.js?v=firebase-config-15";
+import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-16";
+import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-16";
+import { setButtonBusy, showToast } from "./app.js?v=firebase-config-16";
 
 const CATEGORY_META = {
   ev: { label: "EV Charging", icon: "🔌", keyword: "EV charging station" },

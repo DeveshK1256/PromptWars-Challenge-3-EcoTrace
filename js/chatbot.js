@@ -2,7 +2,7 @@
  * EcoBot — Gemini-powered AI chatbot for eco/sustainability questions.
  * Injects a floating chat widget into every page.
  */
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-15";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-16";
 
 const BOT_NAME = "EcoBot";
 const MAX_HISTORY = 12;

@@ -1,7 +1,7 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-15";
-import { ecoService } from "./firebase.js?v=firebase-config-15";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-15";
-import { initEcoBot } from "./chatbot.js?v=firebase-config-15";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-16";
+import { ecoService } from "./firebase.js?v=firebase-config-16";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-16";
+import { initEcoBot } from "./chatbot.js?v=firebase-config-16";
 
 export const appState = {
   user: null,
@@ -187,7 +187,7 @@ function initCountryEmissions() {
     const totalEmissions = data.reduce((sum, c) => sum + c.emissions, 0);
     const maxEmissions = data[0].emissions;
 
-    let html = `<table class="country-table" role="table">`;
+    let html = `<table class="country-table" role="table" aria-label="CO₂ emissions by country in ${activeYear}">`;
     html += `<thead><tr>`;
     html += `<th class="ct-rank">#</th>`;
     html += `<th class="ct-country">Country</th>`;
@@ -212,6 +212,8 @@ function initCountryEmissions() {
 
     html += `</tbody></table>`;
     tableContainer.innerHTML = html;
+    tableContainer.setAttribute("aria-live", "polite");
+    tableContainer.setAttribute("aria-label", `Country emissions for ${activeYear}`);
   }
 
   renderTabs();
