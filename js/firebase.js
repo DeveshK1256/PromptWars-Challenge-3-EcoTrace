@@ -1,4 +1,4 @@
-import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-26";
+import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-27";
 
 const STORAGE_KEYS = Object.freeze({
   profile: "ecotrace.profile",

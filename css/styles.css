@@ -859,28 +859,30 @@ textarea:focus-visible {
   align-items: center;
 }
 .password-wrapper input {
-  padding-inline-end: 3rem;
+  padding-inline-end: 3.2rem;
 }
 .password-toggle {
   position: absolute;
-  inset-inline-end: 0.6rem;
+  inset-inline-end: 0.5rem;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 36px;
-  block-size: 36px;
+  inline-size: 38px;
+  block-size: 38px;
   padding: 0;
-  border: none;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.05rem;
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 .password-toggle:hover {
-  color: var(--forest);
-  background: rgba(47, 124, 100, 0.08);
+  color: #fff;
+  background: var(--forest);
+  border-color: var(--forest);
 }
 
 .radio-grid {
@@ -2187,6 +2189,27 @@ textarea:focus-visible {
 [data-theme="dark"] .auth-card {
   background: var(--surface);
   border-color: var(--line);
+}
+[data-theme="dark"] .auth-card input {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e4efe8;
+}
+[data-theme="dark"] .password-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #c5ddd2;
+}
+[data-theme="dark"] .password-toggle:hover {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: #fff;
+}
+[data-theme="dark"] .btn-link {
+  color: #4ecb8e;
+}
+[data-theme="dark"] .btn-link:hover {
+  color: #6fe8a8;
 }
 
 /* Dark mode — Marquee reviews */
