@@ -118,7 +118,7 @@ export function initEcoHeatmap() {
   if (!el) return;
   const today = new Date();
   const cells = [];
-  let streak = 0, maxStreak = 0, currentStreak = 0;
+  let maxStreak = 0, currentStreak = 0;
   for (let i = 364; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
@@ -126,7 +126,7 @@ export function initEcoHeatmap() {
     cells.push({ date: d, level });
     if (level > 0) { currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); } else { currentStreak = 0; }
   }
-  streak = currentStreak;
+  const streak = currentStreak;
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const monthLabels = months.map(m => `<span>${m}</span>`).join("");
   const dayLabels = ["","Mon","","Wed","","Fri",""].map(d => `<span>${d}</span>`).join("");
@@ -210,7 +210,7 @@ export function initAmbientSounds() {
   }
   function stop() {
     playing = false;
-    nodes.forEach(n => { try { n.stop?.(); n.disconnect(); } catch(_){} });
+    nodes.forEach(n => { try { n.stop?.(); n.disconnect(); } catch(_){ /* node already stopped */ } });
     nodes = [];
     if (ctx) { ctx.close(); ctx = null; }
   }
@@ -234,7 +234,7 @@ export function initPledgeWall() {
     { text: "Only buying second-hand clothes", author: "Anita, Kolkata", emoji: "👗", likes: 44 },
     { text: "Composting all kitchen waste", author: "Karthik, Jaipur", emoji: "🪱", likes: 73 },
   ];
-  let pledges = JSON.parse(localStorage.getItem("eco-pledges") || "null") || defaultPledges;
+  const pledges = JSON.parse(localStorage.getItem("eco-pledges") || "null") || defaultPledges;
   function render() {
     el.innerHTML = pledges.map((p, i) => `<article class="pledge-card"><div class="pledge-text">${p.emoji} "${p.text}"</div><div class="pledge-footer"><span class="pledge-author">\u2014 ${p.author}</span><button class="pledge-like ${p.liked ? 'liked' : ''}" data-pledge-idx="${i}"><i class="fa-${p.liked ? 'solid' : 'regular'} fa-heart"></i> ${p.likes}</button></div></article>`).join("");
     el.querySelectorAll(".pledge-like").forEach(btn => {
