@@ -6,6 +6,7 @@
  */
 
 import { ECO_CONFIG, hasGeminiConfig } from "./config.js";
+import { logWarn } from "./logger.js";
 import { FALLBACK_TIPS } from "./data.js";
 
 /* ── Magic-number constants ────────────────────────────────────── */
@@ -163,7 +164,7 @@ export async function getPersonalizedTips(profile) {
     const data = await response.json();
     return { source: "gemini-api", tips: parseGeminiResponse(data) };
   } catch (error) {
-    console.warn("EcoTrace Gemini fallback used", error);
+    logWarn('gemini', 'Gemini fallback used', error);
     return {
       source: "fallback",
       tips: getFallbackTips(),

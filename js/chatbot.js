@@ -6,6 +6,7 @@
  * is unavailable.
  */
 import { ECO_CONFIG, hasGeminiConfig } from "./config.js";
+import { logError } from "./logger.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -300,7 +301,7 @@ async function handleUserMessage(text) {
     chatHistory.push({ role: "model", parts: [{ text: reply }] });
   } catch (error) {
     removeTypingIndicator();
-    console.error("EcoBot error:", error);
+    logError('chatbot', "EcoBot error:", error);
     const fallback = getFallbackResponse(text);
     addMessage("bot", fallback);
   } finally {

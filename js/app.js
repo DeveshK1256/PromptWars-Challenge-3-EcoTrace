@@ -7,6 +7,7 @@
 import { hasFirebaseConfig } from "./config.js";
 import { ecoService } from "./firebase.js";
 import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js";
+import { logError } from "./logger.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -489,7 +490,7 @@ function setupGoogleSignIn() {
           window.location.href = returnTo;
         }
       } catch (error) {
-        if (error?.code !== "auth/firebase-config-missing") console.error(error);
+        if (error?.code !== "auth/firebase-config-missing") logError('app', error);
         showToast(
           error?.code === "auth/firebase-config-missing"
             ? "Google sign-in needs full Firebase setup. Email accounts still work."
@@ -524,7 +525,7 @@ function setupSignOut() {
           window.location.href = "index.html";
         }
       } catch (error) {
-        console.error(error);
+        logError('app', error);
         showToast("Sign out failed. Please try again.", "error");
       } finally {
         setButtonBusy(button, false);
@@ -565,7 +566,7 @@ function setupSignInForm(isExpectedAuthError, getAuthErrorMessage) {
         showToast(action === "signup" ? "EcoTrace account created." : "Signed in successfully.");
         form.reset();
       } catch (error) {
-        if (!isExpectedAuthError(error)) console.error(error);
+        if (!isExpectedAuthError(error)) logError('app', error);
         showToast(getAuthErrorMessage(error, action), "error");
       } finally {
         setButtonBusy(submitter, false);

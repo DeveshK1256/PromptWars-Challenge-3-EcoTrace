@@ -6,6 +6,7 @@
 import { BADGES } from "./data.js";
 import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
+import { logError } from "./logger.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -131,7 +132,7 @@ form?.addEventListener("submit", async (event) => {
     renderProfile(appState.user, appState.profile);
     showToast("Profile updated.");
   } catch (error) {
-    console.error(error);
+    logError('profile', error);
     showToast("Profile could not be updated.", "error");
   } finally {
     setButtonBusy(button, false);
@@ -181,7 +182,7 @@ document.querySelector("[data-confirm-delete]")?.addEventListener("click", async
     showToast("Account data deleted.");
     window.location.href = "index.html";
   } catch (error) {
-    console.error(error);
+    logError('profile', error);
     showToast("Account could not be deleted. Recent sign-in may be required.", "error");
   } finally {
     setButtonBusy(button, false);

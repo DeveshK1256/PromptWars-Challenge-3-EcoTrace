@@ -8,6 +8,7 @@
 import { ECO_CONFIG, hasMapsConfig } from "./config.js";
 import { MAP_FALLBACK_SPOTS } from "./data.js";
 import { setButtonBusy, showToast } from "./app.js";
+import { logWarn, logError } from "./logger.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -735,7 +736,7 @@ async function runMapSearch(query, category = "all", submitter = null) {
     setActiveCategory(effectiveCategory);
     showToast(fallback.length ? "Map search updated." : "No matching green spots found.", fallback.length ? "success" : "error");
   } catch (error) {
-    console.warn(error);
+    logWarn('map', error);
     const location = getLocationFallback(query) || getLocationFallback(stripGreenServiceWords(query));
     const spots = searchFallback(query, category, location || userPosition, { treatAsLocation: Boolean(location) || !hasGreenIntent(query) });
     renderSpotResults(spots, spots.length ? `Showing ${spots.length} fallback search results.` : "Search failed and no fallback matches were found.");
@@ -761,7 +762,7 @@ findButton?.addEventListener("click", async () => {
     await renderMap(position);
     showToast("Green spots updated near your location.");
   } catch (error) {
-    console.warn(error);
+    logWarn('map', error);
     await renderMap(userPosition);
     showToast("Location permission was unavailable, so EcoTrace used the default city view.", "error");
   } finally {
@@ -788,7 +789,7 @@ async function initMapPage() {
 }
 
 initMapPage().catch((error) => {
-  console.error(error);
+  logError('map', error);
   setStatus("The map could not load. Showing fallback green spots.");
   renderedSpots = fallbackSpots(userPosition);
   renderList();

@@ -7,6 +7,7 @@ import { TIP_CATEGORIES } from "./data.js";
 import { appState, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
 import { getPersonalizedTips } from "./gemini.js";
+import { logError } from "./logger.js";
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");
@@ -122,7 +123,7 @@ function createTipCard(tip, completed) {
       showToast(result.awarded ? "Nice, +10 Green Points!" : "You already earned points for this tip.");
       renderTips();
     } catch (error) {
-      console.error(error);
+      logError('tips', error);
       showToast("Could not save tip completion.", "error");
     } finally {
       setButtonBusy(action, false);
@@ -185,7 +186,7 @@ refreshButton?.addEventListener("click", async () => {
     await loadTips(appState.user, true);
     showToast("Tips refreshed for today.");
   } catch (error) {
-    console.error(error);
+    logError('tips', error);
     showToast("Tips could not be refreshed.", "error");
   } finally {
     setButtonBusy(refreshButton, false);
@@ -194,7 +195,7 @@ refreshButton?.addEventListener("click", async () => {
 
 onUserReady((user) => {
   loadTips(user).catch((error) => {
-    console.error(error);
+    logError('tips', error);
     if (status) status.textContent = "Tips could not load. Try refreshing in a moment.";
   });
 });

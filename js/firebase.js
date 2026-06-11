@@ -6,6 +6,7 @@
  * when Firebase credentials are not configured.
  */
 import { ECO_CONFIG, hasFirebaseConfig } from "./config.js";
+import { logWarn, logError } from "./logger.js";
 
 /* ── Named constants ───────────────────────────────────────────────── */
 
@@ -95,7 +96,7 @@ function readJson(key, fallback) {
     const stored = localStorage.getItem(key);
     return stored ? JSON.parse(stored) : fallback;
   } catch (error) {
-    console.warn(`EcoTrace could not read ${key}`, error);
+    logWarn('firebase', `EcoTrace could not read ${key}`, error);
     return fallback;
   }
 }
@@ -612,9 +613,9 @@ export const ecoService = {
     if (!runtime) {
       throw createAuthError(
         "auth/demo-mode",
-        "You're in demo mode — accounts are stored locally in your browser. "
-          + "Password reset emails cannot be sent. Try signing in with the password "
-          + "you used to create the account, or create a new account.",
+        `You're in demo mode — accounts are stored locally in your browser. `
+          + `Password reset emails cannot be sent. Try signing in with the password `
+          + `you used to create the account, or create a new account.`,
       );
     }
     try {
@@ -623,9 +624,9 @@ export const ecoService = {
       if (err.code === "auth/user-not-found") {
         throw createAuthError(
           "auth/user-not-found",
-          "This email is not registered in Firebase. If you created your account "
-            + "while offline or in demo mode, it only exists locally. "
-            + "Please create a new account.",
+          `This email is not registered in Firebase. If you created your account `
+            + `while offline or in demo mode, it only exists locally. `
+            + `Please create a new account.`,
         );
       }
       if (err.code === "auth/invalid-email") {
@@ -634,7 +635,7 @@ export const ecoService = {
       if (err.code === "auth/too-many-requests") {
         throw createAuthError("auth/too-many-requests", "Too many attempts. Please try again later.");
       }
-      console.error("Password reset error:", err);
+      logError('firebase', "Password reset error:", err);
       throw err;
     }
   },

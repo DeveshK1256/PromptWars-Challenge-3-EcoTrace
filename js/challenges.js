@@ -6,6 +6,7 @@
 import { BADGES, CHALLENGES } from "./data.js";
 import { appState, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
+import { logError } from "./logger.js";
 
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");
@@ -65,7 +66,7 @@ function createChallengeCard(challenge, accepted) {
       await renderLeaderboard(appState.user);
       showToast(result.awarded ? `Challenge accepted. +${challenge.points} points!` : "Challenge already accepted.");
     } catch (error) {
-      console.error(error);
+      logError('challenges', error);
       showToast("Challenge could not be accepted.", "error");
     } finally {
       setButtonBusy(button, false);
@@ -154,7 +155,7 @@ onUserReady((user, profile) => {
   renderChallenges(profile);
   renderBadges(profile);
   renderLeaderboard(user).catch((error) => {
-    console.error(error);
+    logError('challenges', error);
     showToast("Leaderboard could not load.", "error");
   });
 });

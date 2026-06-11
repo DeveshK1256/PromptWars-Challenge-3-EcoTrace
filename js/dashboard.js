@@ -6,6 +6,7 @@
 import { ECO_CONFIG } from "./config.js";
 import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
+import { logError } from "./logger.js";
 
 let breakdownChart;
 let trendChart;
@@ -486,7 +487,7 @@ async function renderDashboard(user, profile) {
 
 onUserReady((user, profile) => {
   renderDashboard(user || appState.user, profile || appState.profile).catch((error) => {
-    console.error(error);
+    logError('dashboard', error);
     document.querySelector("[data-dashboard-error]")?.removeAttribute("hidden");
   });
 });

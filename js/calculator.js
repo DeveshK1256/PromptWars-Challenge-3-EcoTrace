@@ -8,6 +8,7 @@ import { ECO_CONFIG } from "./config.js";
 import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
 import { getPersonalizedTips } from "./gemini.js";
+import { logError } from "./logger.js";
 
 /** @type {HTMLFormElement|null} Main calculator form element. */
 const form = document.querySelector("[data-calculator-form]");
@@ -493,7 +494,7 @@ function initCalculator() {
       sessionStorage.setItem("ecotrace.latestProfile", JSON.stringify(latestResult));
       showToast("Footprint result saved.");
     } catch (error) {
-      console.error(error);
+      logError('calculator', error);
       showToast("Result could not be saved. Please try again.", "error");
     } finally {
       setButtonBusy(button, false);
@@ -509,7 +510,7 @@ function initCalculator() {
       sessionStorage.setItem("ecotrace.aiTips", JSON.stringify(response.tips));
       renderAiTips(response.tips, response.message || `Tips generated via ${response.source}.`);
     } catch (error) {
-      console.error(error);
+      logError('calculator', error);
       showToast("AI tips are unavailable right now.", "error");
     } finally {
       setButtonBusy(button, false);

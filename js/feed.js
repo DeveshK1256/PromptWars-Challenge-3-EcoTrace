@@ -7,6 +7,7 @@ import { ECO_CONFIG, hasSearchConfig } from "./config.js";
 import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js";
 import { appState, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
+import { logWarn, logError } from "./logger.js";
 
 const tabs = document.querySelector("[data-feed-tabs]");
 const grid = document.querySelector("[data-feed-grid]");
@@ -133,7 +134,7 @@ function createArticleCard(article, readArticles) {
       showToast(result.awarded ? "Article logged. +5 Green Points!" : "You already earned points for this article.");
       renderArticles();
     } catch (error) {
-      console.error(error);
+      logError('feed', error);
       showToast("Could not award article points.", "error");
     } finally {
       setButtonBusy(read, false);
@@ -152,7 +153,7 @@ function createArticleCard(article, readArticles) {
         showToast("Article link copied.");
       }
     } catch (error) {
-      console.warn(error);
+      logWarn('feed', error);
     }
   });
   actions.append(read, share);
@@ -197,7 +198,7 @@ async function loadFeed(force = false) {
         localStorage.setItem(key, JSON.stringify(articles));
         if (status) status.textContent = "Feed loaded from Google Custom Search.";
       } catch (error) {
-        console.warn(error);
+        logWarn('feed', error);
         articles = shuffleArray(FEED_ARTICLES);
         if (status) status.textContent = "Google Custom Search was unavailable, so curated stories are shown.";
       }
@@ -222,7 +223,7 @@ refreshButton?.addEventListener("click", async () => {
 
 onUserReady(() => {
   loadFeed().catch((error) => {
-    console.error(error);
+    logError('feed', error);
     if (status) status.textContent = "Feed could not load right now.";
   });
 });
