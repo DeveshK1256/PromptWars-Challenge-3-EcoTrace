@@ -393,6 +393,7 @@ textarea:focus-visible {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .counter-label {
@@ -400,6 +401,7 @@ textarea:focus-visible {
   align-items: center;
   justify-content: space-between;
   color: var(--muted);
+  font-size: 0.82rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -408,13 +410,37 @@ textarea:focus-visible {
 .counter-number {
   margin-block: 1rem 0.25rem;
   font-family: var(--font-display);
-  font-size: clamp(2.3rem, 5vw, 4rem);
+  font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 700;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  line-height: 1.1;
+}
+
+.counter-number span {
+  font-size: 0.55em;
+  font-weight: 600;
+  color: var(--forest);
+  margin-inline-start: 0.2em;
+  word-break: normal;
+}
+
+.counter-unit {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--forest);
+  letter-spacing: -0.02em;
 }
 
 .counter-card small {
+  display: block;
+  margin-block-start: 0.6rem;
   color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .earth-card {

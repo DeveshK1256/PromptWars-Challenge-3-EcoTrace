@@ -1,6 +1,6 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-16";
-import { ecoService } from "./firebase.js?v=firebase-config-16";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-16";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-17";
+import { ecoService } from "./firebase.js?v=firebase-config-17";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-17";
 
 export const appState = {
   user: null,
@@ -394,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-16").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-17").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, 2000);
   document.addEventListener("click", loadChatbot, { once: true });

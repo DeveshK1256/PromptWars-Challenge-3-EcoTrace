@@ -1,6 +1,6 @@
-import { BADGES } from "./data.js?v=firebase-config-16";
-import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-16";
-import { ecoService } from "./firebase.js?v=firebase-config-16";
+import { BADGES } from "./data.js?v=firebase-config-17";
+import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-17";
+import { ecoService } from "./firebase.js?v=firebase-config-17";
 
 const form = document.querySelector("[data-profile-form]");
 const historyBody = document.querySelector("[data-history-table]");
