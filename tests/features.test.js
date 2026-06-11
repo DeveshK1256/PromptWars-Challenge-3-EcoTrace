@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const featuresSource = readFileSync(resolve('js/features.js'), 'utf-8');
+const socialSource = readFileSync(resolve('js/features-social.js'), 'utf-8');
 
 describe('Features Module', () => {
   describe('Module Structure', () => {
@@ -10,9 +11,10 @@ describe('Features Module', () => {
       expect(featuresSource).toMatch(/@module\s+features/);
     });
 
-    it('exports exactly 9 feature functions', () => {
-      const exports = featuresSource.match(/export function \w+/g);
-      expect(exports).toHaveLength(9);
+    it('exports exactly 9 feature functions across both modules', () => {
+      const coreExports = featuresSource.match(/export function \w+/g) || [];
+      const socialExports = socialSource.match(/export function \w+/g) || [];
+      expect(coreExports.length + socialExports.length).toBe(9);
     });
 
     it('has auto-init on DOMContentLoaded', () => {
@@ -30,8 +32,8 @@ describe('Features Module', () => {
     });
 
     it('defines CANVAS dimensions', () => {
-      expect(featuresSource).toContain('CANVAS_WIDTH');
-      expect(featuresSource).toContain('CANVAS_HEIGHT');
+      expect(socialSource).toContain('CANVAS_WIDTH');
+      expect(socialSource).toContain('CANVAS_HEIGHT');
     });
 
     it('defines AMBIENT_AUTO_STOP_MS', () => {
@@ -40,7 +42,7 @@ describe('Features Module', () => {
 
     it('uses localStorage key constants', () => {
       expect(featuresSource).toContain('DARK_MODE_KEY');
-      expect(featuresSource).toContain('PLEDGES_KEY');
+      expect(socialSource).toContain('PLEDGES_KEY');
       expect(featuresSource).toContain('FOOTPRINT_KEY');
     });
   });
@@ -73,12 +75,12 @@ describe('Features Module', () => {
 
   describe('Feature 5: Heatmap', () => {
     it('generates HEATMAP_DAYS cells', () => {
-      expect(featuresSource).toContain('HEATMAP_DAYS');
+      expect(socialSource).toContain('HEATMAP_DAYS');
     });
 
     it('tracks current and max streak', () => {
-      expect(featuresSource).toContain('maxStreak');
-      expect(featuresSource).toContain('currentStreak');
+      expect(socialSource).toContain('maxStreak');
+      expect(socialSource).toContain('currentStreak');
     });
   });
 
@@ -94,13 +96,13 @@ describe('Features Module', () => {
 
   describe('Feature 9: Footprint Comparison', () => {
     it('compares against country averages', () => {
-      expect(featuresSource).toContain('India Avg');
-      expect(featuresSource).toContain('World Avg');
-      expect(featuresSource).toContain('USA Avg');
+      expect(socialSource).toContain('India Avg');
+      expect(socialSource).toContain('World Avg');
+      expect(socialSource).toContain('USA Avg');
     });
 
     it('includes Paris Agreement goal', () => {
-      expect(featuresSource).toContain('Paris Goal');
+      expect(socialSource).toContain('Paris Goal');
     });
   });
 });

@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
 const calculatorSource = readFileSync(resolve('js/calculator.js'), 'utf-8');
-
+const emissionFactorsSource = existsSync(resolve('js/emission-factors.js'))
+  ? readFileSync(resolve('js/emission-factors.js'), 'utf-8')
+  : calculatorSource;
+const combinedSource = calculatorSource + '\n' + emissionFactorsSource;
 describe('Calculator Module', () => {
   describe('Code Quality', () => {
     it('has a @module JSDoc header', () => {
@@ -11,36 +14,36 @@ describe('Calculator Module', () => {
     });
 
     it('has JSDoc for EMISSION_FACTORS', () => {
-      expect(calculatorSource).toMatch(/@type.*Array/);
+      expect(combinedSource).toMatch(/@type.*Array/);
     });
   });
 
   describe('Emission Factors', () => {
     it('defines at least 10 emission factors', () => {
-      const matches = calculatorSource.match(/id:\s*"/g);
+      const matches = combinedSource.match(/id:\s*"/g);
       expect(matches.length).toBeGreaterThanOrEqual(10);
     });
 
     it('covers all 4 categories plus Comparison', () => {
-      expect(calculatorSource).toContain('category: "Transport"');
-      expect(calculatorSource).toContain('category: "Food"');
-      expect(calculatorSource).toContain('category: "Energy"');
-      expect(calculatorSource).toContain('category: "Shopping"');
-      expect(calculatorSource).toContain('category: "Comparison"');
+      expect(combinedSource).toContain('category: "Transport"');
+      expect(combinedSource).toContain('category: "Food"');
+      expect(combinedSource).toContain('category: "Energy"');
+      expect(combinedSource).toContain('category: "Shopping"');
+      expect(combinedSource).toContain('category: "Comparison"');
     });
 
     it('each factor has required fields', () => {
-      const factorBlocks = calculatorSource.match(/\{\s*id:\s*"[^"]+"/g);
+      const factorBlocks = combinedSource.match(/\{\s*id:\s*"[^"]+"/g);
       expect(factorBlocks.length).toBeGreaterThanOrEqual(10);
       // Check required field patterns exist
-      expect(calculatorSource).toContain('keywords:');
-      expect(calculatorSource).toContain('estimate:');
-      expect(calculatorSource).toContain('detail:');
+      expect(combinedSource).toContain('keywords:');
+      expect(combinedSource).toContain('estimate:');
+      expect(combinedSource).toContain('detail:');
     });
 
     it('has India and world average comparison entries', () => {
-      expect(calculatorSource).toContain('"india-average"');
-      expect(calculatorSource).toContain('"world-average"');
+      expect(combinedSource).toContain('"india-average"');
+      expect(combinedSource).toContain('"world-average"');
     });
   });
 
