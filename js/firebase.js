@@ -5,7 +5,7 @@
  * and a leaderboard — with seamless local-storage fallback ("demo mode")
  * when Firebase credentials are not configured.
  */
-import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-35";
+import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-36";
 
 /* ── Named constants ───────────────────────────────────────────────── */
 

@@ -3,9 +3,9 @@
  * Weekly eco-challenges, badge progression, and Green Points
  * leaderboard with real-time Firestore or demo-mode fallback.
  */
-import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-35";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-35";
-import { ecoService } from "./firebase.js?v=firebase-config-35";
+import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-36";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-36";
+import { ecoService } from "./firebase.js?v=firebase-config-36";
 
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");

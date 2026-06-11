@@ -70,20 +70,30 @@ const FOOTPRINT_KEY = "lastFootprintKg";
 export function initDarkMode() {
   const btn = document.querySelector("[data-darkmode-toggle]");
   if (!btn) return;
+
+  /** Sets the dark-mode toggle button icon. */
+  function setIcon(icon) {
+    btn.replaceChildren();
+    const i = document.createElement('i');
+    i.className = `fa-solid fa-${icon}`;
+    i.setAttribute('aria-hidden', 'true');
+    btn.append(i);
+  }
+
   const saved = localStorage.getItem(DARK_MODE_KEY);
   if (saved === "true" || (!saved && matchMedia("(prefers-color-scheme:dark)").matches)) {
     document.documentElement.setAttribute("data-theme", "dark");
-    btn.innerHTML = '<i class="fa-solid fa-sun" aria-hidden="true"></i>';
+    setIcon('sun');
   }
   btn.addEventListener("click", () => {
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     if (isDark) {
       document.documentElement.removeAttribute("data-theme");
-      btn.innerHTML = '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
+      setIcon('moon');
       localStorage.setItem(DARK_MODE_KEY, "false");
     } else {
       document.documentElement.setAttribute("data-theme", "dark");
-      btn.innerHTML = '<i class="fa-solid fa-sun" aria-hidden="true"></i>';
+      setIcon('sun');
       localStorage.setItem(DARK_MODE_KEY, "true");
     }
   });
@@ -110,13 +120,22 @@ export function initEarthVitals() {
     { emoji: "🐾", label: "Species at Risk", value: "1M threatened" },
     { emoji: "🏭", label: "Emissions/Year", value: "37.4 Gt CO₂" },
   ];
-  const items = stats.map(s =>
-    `<span class="vitals-item">
-      <span class="vitals-emoji">${s.emoji}</span>
-      ${s.label}: <span class="vitals-value">${s.value}</span>
-    </span>`
-  ).join("");
-  el.innerHTML = `<div class="vitals-track">${items}${items}</div>`;
+  const track = document.createElement('div');
+  track.className = 'vitals-track';
+  const createItems = () => stats.map(s => {
+    const span = document.createElement('span');
+    span.className = 'vitals-item';
+    const emoji = document.createElement('span');
+    emoji.className = 'vitals-emoji';
+    emoji.textContent = s.emoji;
+    const val = document.createElement('span');
+    val.className = 'vitals-value';
+    val.textContent = s.value;
+    span.append(emoji, ` ${s.label}: `, val);
+    return span;
+  });
+  track.append(...createItems(), ...createItems());
+  el.replaceChildren(track);
 }
 
 /* ===== 3. CARBON TIME MACHINE ===== */
@@ -177,18 +196,47 @@ export function initTimeMachine() {
     return "#dc7f5b";
   }
 
-  el.innerHTML = `
-    <div class="time-machine-year" data-tm-year>2025</div>
-    <div class="time-machine-era" data-tm-era>Climate Crisis</div>
-    <div class="time-machine-ppm" data-tm-ppm>424 ppm</div>
-    <div class="time-machine-bar">
-      <div class="time-machine-fill" data-tm-fill></div>
-    </div>
-    <input type="range" min="1750" max="2025" value="2025" step="1"
-           aria-label="Select year">
-    <div class="time-machine-labels">
-      <span>1750</span><span>1900</span><span>2025</span>
-    </div>`;
+  el.replaceChildren();
+
+  const yearDiv = document.createElement('div');
+  yearDiv.className = 'time-machine-year';
+  yearDiv.setAttribute('data-tm-year', '');
+  yearDiv.textContent = '2025';
+
+  const eraDiv = document.createElement('div');
+  eraDiv.className = 'time-machine-era';
+  eraDiv.setAttribute('data-tm-era', '');
+  eraDiv.textContent = 'Climate Crisis';
+
+  const ppmDiv = document.createElement('div');
+  ppmDiv.className = 'time-machine-ppm';
+  ppmDiv.setAttribute('data-tm-ppm', '');
+  ppmDiv.textContent = '424 ppm';
+
+  const barDiv = document.createElement('div');
+  barDiv.className = 'time-machine-bar';
+  const fillDiv = document.createElement('div');
+  fillDiv.className = 'time-machine-fill';
+  fillDiv.setAttribute('data-tm-fill', '');
+  barDiv.append(fillDiv);
+
+  const rangeInput = document.createElement('input');
+  rangeInput.type = 'range';
+  rangeInput.min = '1750';
+  rangeInput.max = '2025';
+  rangeInput.value = '2025';
+  rangeInput.step = '1';
+  rangeInput.setAttribute('aria-label', 'Select year');
+
+  const labelsDiv = document.createElement('div');
+  labelsDiv.className = 'time-machine-labels';
+  ['1750', '1900', '2025'].forEach(txt => {
+    const span = document.createElement('span');
+    span.textContent = txt;
+    labelsDiv.append(span);
+  });
+
+  el.append(yearDiv, eraDiv, ppmDiv, barDiv, rangeInput, labelsDiv);
 
   const slider = el.querySelector("input");
   const yearEl = el.querySelector("[data-tm-year]");
@@ -231,13 +279,23 @@ export function initOffsetVisualizer() {
     { emoji: "💡", value: Math.ceil(kg / KG_PER_LED), label: "LED bulbs to switch" },
     { emoji: "🚲", value: Math.ceil(kg / KM_PER_KG_CYCLING / 365), label: "km cycling daily" },
   ];
-  el.innerHTML = offsets.map(o => `
-    <div class="offset-card">
-      <span class="offset-emoji">${o.emoji}</span>
-      <div class="offset-number" data-count="${o.value}">0</div>
-      <div class="offset-label">${o.label}</div>
-    </div>`
-  ).join("");
+  el.replaceChildren();
+  offsets.forEach(o => {
+    const card = document.createElement('div');
+    card.className = 'offset-card';
+    const emoji = document.createElement('span');
+    emoji.className = 'offset-emoji';
+    emoji.textContent = o.emoji;
+    const num = document.createElement('div');
+    num.className = 'offset-number';
+    num.dataset.count = o.value;
+    num.textContent = '0';
+    const label = document.createElement('div');
+    label.className = 'offset-label';
+    label.textContent = o.label;
+    card.append(emoji, num, label);
+    el.append(card);
+  });
 
   el.querySelectorAll("[data-count]").forEach(num => {
     const target = Number(num.dataset.count);
@@ -284,37 +342,67 @@ export function initEcoHeatmap() {
 
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const monthLabels = months.map(m => `<span>${m}</span>`).join("");
-  const dayLabels = ["", "Mon", "", "Wed", "", "Fri", ""]
-    .map(d => `<span>${d}</span>`).join("");
 
-  const grid = cells.map(c => {
+  el.replaceChildren();
+
+  const monthsDiv = document.createElement('div');
+  monthsDiv.className = 'heatmap-months';
+  months.forEach(m => {
+    const span = document.createElement('span');
+    span.textContent = m;
+    monthsDiv.append(span);
+  });
+
+  const containerDiv = document.createElement('div');
+  containerDiv.className = 'heatmap-container';
+
+  const daysDiv = document.createElement('div');
+  daysDiv.className = 'heatmap-days';
+  ["", "Mon", "", "Wed", "", "Fri", ""].forEach(d => {
+    const span = document.createElement('span');
+    span.textContent = d;
+    daysDiv.append(span);
+  });
+
+  const gridDiv = document.createElement('div');
+  gridDiv.className = 'heatmap-grid';
+  cells.forEach(c => {
     const ds = c.date.toLocaleDateString("en-IN", {
       day: "numeric", month: "short", year: "numeric",
     });
-    return `<div class="heatmap-cell" data-level="${c.level}"
-                 title="${ds}: ${c.level} actions"></div>`;
-  }).join("");
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    cell.dataset.level = c.level;
+    cell.title = `${ds}: ${c.level} actions`;
+    gridDiv.append(cell);
+  });
 
-  el.innerHTML = `
-    <div class="heatmap-months">${monthLabels}</div>
-    <div class="heatmap-container">
-      <div class="heatmap-days">${dayLabels}</div>
-      <div class="heatmap-grid">${grid}</div>
-    </div>
-    <div class="heatmap-stats">
-      <div>🔥 Current Streak: <strong>${streak} days</strong></div>
-      <div>🏆 Longest Streak: <strong>${maxStreak} days</strong></div>
-    </div>
-    <div class="heatmap-legend">
-      Less
-      <div class="heatmap-legend-cell heatmap-cell" data-level="0"></div>
-      <div class="heatmap-legend-cell heatmap-cell" data-level="1"></div>
-      <div class="heatmap-legend-cell heatmap-cell" data-level="2"></div>
-      <div class="heatmap-legend-cell heatmap-cell" data-level="3"></div>
-      <div class="heatmap-legend-cell heatmap-cell" data-level="4"></div>
-      More
-    </div>`;
+  containerDiv.append(daysDiv, gridDiv);
+
+  const statsDiv = document.createElement('div');
+  statsDiv.className = 'heatmap-stats';
+  const currentStreakDiv = document.createElement('div');
+  const currentStreakStrong = document.createElement('strong');
+  currentStreakStrong.textContent = `${streak} days`;
+  currentStreakDiv.append('🔥 Current Streak: ', currentStreakStrong);
+  const maxStreakDiv = document.createElement('div');
+  const maxStreakStrong = document.createElement('strong');
+  maxStreakStrong.textContent = `${maxStreak} days`;
+  maxStreakDiv.append('🏆 Longest Streak: ', maxStreakStrong);
+  statsDiv.append(currentStreakDiv, maxStreakDiv);
+
+  const legendDiv = document.createElement('div');
+  legendDiv.className = 'heatmap-legend';
+  legendDiv.append('Less');
+  for (let lvl = 0; lvl <= 4; lvl++) {
+    const lc = document.createElement('div');
+    lc.className = 'heatmap-legend-cell heatmap-cell';
+    lc.dataset.level = lvl;
+    legendDiv.append(lc);
+  }
+  legendDiv.append('More');
+
+  el.append(monthsDiv, containerDiv, statsDiv, legendDiv);
 }
 
 /* ===== 6. SHARE SCORE CARD ===== */
@@ -466,15 +554,28 @@ export function initAmbientSounds() {
     if (ctx) { ctx.close(); ctx = null; }
   }
 
+  /**
+   * Sets the ambient-sounds button icon and label text.
+   * @param {string} icon - FontAwesome icon name suffix.
+   * @param {string} text - Button label text.
+   */
+  function setAmbientLabel(icon, text) {
+    btn.replaceChildren();
+    const i = document.createElement('i');
+    i.className = `fa-solid fa-${icon}`;
+    i.setAttribute('aria-hidden', 'true');
+    btn.append(i, ` ${text}`);
+  }
+
   btn.addEventListener("click", () => {
     if (playing) {
       stop();
       btn.classList.remove("active");
-      btn.innerHTML = '<i class="fa-solid fa-volume-xmark" aria-hidden="true"></i> Nature Sounds';
+      setAmbientLabel('volume-xmark', 'Nature Sounds');
     } else {
       start();
       btn.classList.add("active");
-      btn.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i> Nature Sounds';
+      setAmbientLabel('volume-high', 'Nature Sounds');
     }
   });
 }
@@ -504,27 +605,39 @@ export function initPledgeWall() {
 
   /** Re-renders all pledge cards and wires up like buttons. */
   function render() {
-    el.innerHTML = pledges.map((p, i) => `
-      <article class="pledge-card">
-        <div class="pledge-text">${p.emoji} "${p.text}"</div>
-        <div class="pledge-footer">
-          <span class="pledge-author">\u2014 ${p.author}</span>
-          <button class="pledge-like ${p.liked ? "liked" : ""}"
-                  data-pledge-idx="${i}">
-            <i class="fa-${p.liked ? "solid" : "regular"} fa-heart"></i> ${p.likes}
-          </button>
-        </div>
-      </article>`
-    ).join("");
+    el.replaceChildren();
+    pledges.forEach((p, i) => {
+      const article = document.createElement('article');
+      article.className = 'pledge-card';
 
-    el.querySelectorAll(".pledge-like").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const idx = Number(btn.dataset.pledgeIdx);
-        pledges[idx].liked = !pledges[idx].liked;
-        pledges[idx].likes += pledges[idx].liked ? 1 : -1;
+      const textDiv = document.createElement('div');
+      textDiv.className = 'pledge-text';
+      textDiv.textContent = `${p.emoji} "${p.text}"`;
+
+      const footer = document.createElement('div');
+      footer.className = 'pledge-footer';
+
+      const authorSpan = document.createElement('span');
+      authorSpan.className = 'pledge-author';
+      authorSpan.textContent = `\u2014 ${p.author}`;
+
+      const likeBtn = document.createElement('button');
+      likeBtn.className = `pledge-like${p.liked ? ' liked' : ''}`;
+      likeBtn.dataset.pledgeIdx = i;
+      const heartIcon = document.createElement('i');
+      heartIcon.className = `fa-${p.liked ? 'solid' : 'regular'} fa-heart`;
+      likeBtn.append(heartIcon, ` ${p.likes}`);
+
+      likeBtn.addEventListener('click', () => {
+        pledges[i].liked = !pledges[i].liked;
+        pledges[i].likes += pledges[i].liked ? 1 : -1;
         localStorage.setItem(PLEDGES_KEY, JSON.stringify(pledges));
         render();
       });
+
+      footer.append(authorSpan, likeBtn);
+      article.append(textDiv, footer);
+      el.append(article);
     });
   }
   render();
@@ -570,16 +683,31 @@ export function initFootprintComparison() {
   ];
   const max = Math.max(...entries.map(e => e.kg));
 
-  el.innerHTML = entries.map((e, i) => `
-    <div class="compare-row" style="animation-delay:${i * 0.08}s">
-      <div class="compare-label">${e.flag} ${e.label}</div>
-      <div class="compare-bar-track">
-        <div class="compare-bar-fill ${e.cls}" style="inline-size:0%"
-             data-width="${(e.kg / max * 100).toFixed(1)}"></div>
-      </div>
-      <div class="compare-value">${e.kg.toLocaleString()} kg</div>
-    </div>`
-  ).join("");
+  el.replaceChildren();
+  entries.forEach((e, i) => {
+    const row = document.createElement('div');
+    row.className = 'compare-row';
+    row.style.animationDelay = `${i * 0.08}s`;
+
+    const label = document.createElement('div');
+    label.className = 'compare-label';
+    label.textContent = `${e.flag} ${e.label}`;
+
+    const barTrack = document.createElement('div');
+    barTrack.className = 'compare-bar-track';
+    const barFill = document.createElement('div');
+    barFill.className = `compare-bar-fill ${e.cls}`.trim();
+    barFill.style.inlineSize = '0%';
+    barFill.dataset.width = (e.kg / max * 100).toFixed(1);
+    barTrack.append(barFill);
+
+    const value = document.createElement('div');
+    value.className = 'compare-value';
+    value.textContent = `${e.kg.toLocaleString()} kg`;
+
+    row.append(label, barTrack, value);
+    el.append(row);
+  });
 
   setTimeout(() => {
     el.querySelectorAll("[data-width]").forEach(bar => {

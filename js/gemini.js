@@ -5,8 +5,8 @@
  * normalizes the response, and falls back to static tips on failure.
  */
 
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-35";
-import { FALLBACK_TIPS } from "./data.js?v=firebase-config-35";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-36";
+import { FALLBACK_TIPS } from "./data.js?v=firebase-config-36";
 
 /* ── Magic-number constants ────────────────────────────────────── */
 

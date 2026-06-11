@@ -4,9 +4,9 @@
  * utility helpers (formatting, toasts, UI), auth flow, navigation, a live
  * global CO₂ counter, and country-emissions table rendering.
  */
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-35";
-import { ecoService } from "./firebase.js?v=firebase-config-35";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-35";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-36";
+import { ecoService } from "./firebase.js?v=firebase-config-36";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-36";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -269,7 +269,7 @@ function initCountryEmissions() {
   let activeYear = COUNTRY_EMISSIONS_YEARS[COUNTRY_EMISSIONS_YEARS.length - 1];
 
   function renderTabs() {
-    tabsContainer.innerHTML = "";
+    tabsContainer.replaceChildren();
     COUNTRY_EMISSIONS_YEARS.forEach((year) => {
       const btn = document.createElement("button");
       btn.className = "filter-tab";
@@ -293,31 +293,78 @@ function initCountryEmissions() {
     const totalEmissions = data.reduce((sum, c) => sum + c.emissions, 0);
     const maxEmissions = data[0].emissions;
 
-    let html = `<table class="country-table" role="table" aria-label="CO₂ emissions by country in ${activeYear}">`;
-    html += `<thead><tr>`;
-    html += `<th class="ct-rank">#</th>`;
-    html += `<th class="ct-country">Country</th>`;
-    html += `<th class="ct-emissions">Emissions (MT)</th>`;
-    html += `<th class="ct-bar">Relative Output</th>`;
-    html += `<th class="ct-pct">Share</th>`;
-    html += `</tr></thead><tbody>`;
+    const table = document.createElement("table");
+    table.className = "country-table";
+    table.setAttribute("role", "table");
+    table.setAttribute("aria-label", `CO₂ emissions by country in ${activeYear}`);
 
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const headers = [
+      { text: "#", className: "ct-rank" },
+      { text: "Country", className: "ct-country" },
+      { text: "Emissions (MT)", className: "ct-emissions" },
+      { text: "Relative Output", className: "ct-bar" },
+      { text: "Share", className: "ct-pct" },
+    ];
+    headers.forEach(({ text, className }) => {
+      const th = document.createElement("th");
+      th.className = className;
+      th.textContent = text;
+      headerRow.append(th);
+    });
+    thead.append(headerRow);
+
+    const tbody = document.createElement("tbody");
     data.forEach((entry, index) => {
       const pct = ((entry.emissions / totalEmissions) * 100).toFixed(1);
       const barWidth = ((entry.emissions / maxEmissions) * 100).toFixed(1);
       const rankClass = index < 3 ? `ct-rank-top ct-rank-${index + 1}` : "";
 
-      html += `<tr class="ct-row">`;
-      html += `<td class="ct-rank-cell"><span class="ct-rank-badge ${rankClass}">${index + 1}</span></td>`;
-      html += `<td class="ct-country-cell"><span class="ct-flag">${entry.flag}</span><span class="ct-name">${entry.country}</span></td>`;
-      html += `<td class="ct-emissions-cell">${entry.emissions.toLocaleString()}</td>`;
-      html += `<td class="ct-bar-cell"><div class="ct-bar-track"><div class="ct-bar-fill" style="inline-size:${barWidth}%"></div></div></td>`;
-      html += `<td class="ct-pct-cell">${pct}%</td>`;
-      html += `</tr>`;
+      const tr = document.createElement("tr");
+      tr.className = "ct-row";
+
+      const rankCell = document.createElement("td");
+      rankCell.className = "ct-rank-cell";
+      const rankBadge = document.createElement("span");
+      rankBadge.className = `ct-rank-badge ${rankClass}`;
+      rankBadge.textContent = String(index + 1);
+      rankCell.append(rankBadge);
+
+      const countryCell = document.createElement("td");
+      countryCell.className = "ct-country-cell";
+      const flagSpan = document.createElement("span");
+      flagSpan.className = "ct-flag";
+      flagSpan.textContent = entry.flag;
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "ct-name";
+      nameSpan.textContent = entry.country;
+      countryCell.append(flagSpan, nameSpan);
+
+      const emissionsCell = document.createElement("td");
+      emissionsCell.className = "ct-emissions-cell";
+      emissionsCell.textContent = entry.emissions.toLocaleString();
+
+      const barCell = document.createElement("td");
+      barCell.className = "ct-bar-cell";
+      const barTrack = document.createElement("div");
+      barTrack.className = "ct-bar-track";
+      const barFill = document.createElement("div");
+      barFill.className = "ct-bar-fill";
+      barFill.style.inlineSize = `${barWidth}%`;
+      barTrack.append(barFill);
+      barCell.append(barTrack);
+
+      const pctCell = document.createElement("td");
+      pctCell.className = "ct-pct-cell";
+      pctCell.textContent = `${pct}%`;
+
+      tr.append(rankCell, countryCell, emissionsCell, barCell, pctCell);
+      tbody.append(tr);
     });
 
-    html += `</tbody></table>`;
-    tableContainer.innerHTML = html;
+    table.append(thead, tbody);
+    tableContainer.replaceChildren(table);
     tableContainer.setAttribute("aria-live", "polite");
     tableContainer.setAttribute("aria-label", `Country emissions for ${activeYear}`);
   }
@@ -518,9 +565,11 @@ function initAuthActions() {
       if (!input) return;
       const isPassword = input.type === "password";
       input.type = isPassword ? "text" : "password";
-      btn.innerHTML = isPassword
-        ? '<i class="fa-solid fa-eye-slash" aria-hidden="true"></i>'
-        : '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
+      btn.replaceChildren();
+      const icon = document.createElement('i');
+      icon.className = `fa-solid fa-eye${isPassword ? '' : '-slash'}`;
+      icon.setAttribute('aria-hidden', 'true');
+      btn.append(icon);
       btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
     });
   });
@@ -587,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-35").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-36").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, CHATBOT_LAZY_DELAY_MS);
   document.addEventListener("click", loadChatbot, { once: true });

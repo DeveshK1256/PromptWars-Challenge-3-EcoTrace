@@ -5,7 +5,7 @@
  * questions, and falls back to a local answer bank when the Gemini API
  * is unavailable.
  */
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-35";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-36";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -62,8 +62,14 @@ function createChatWidget() {
   fab.className = "ecobot-fab";
   fab.id = "ecobot-fab";
   fab.setAttribute("aria-label", "Open EcoBot AI assistant");
-  fab.innerHTML = `<span class="ecobot-fab-icon" aria-hidden="true">🤖</span>
-    <span class="ecobot-fab-pulse" aria-hidden="true"></span>`;
+  const fabIcon = document.createElement("span");
+  fabIcon.className = "ecobot-fab-icon";
+  fabIcon.setAttribute("aria-hidden", "true");
+  fabIcon.textContent = "🤖";
+  const fabPulse = document.createElement("span");
+  fabPulse.className = "ecobot-fab-pulse";
+  fabPulse.setAttribute("aria-hidden", "true");
+  fab.append(fabIcon, fabPulse);
 
   // ── Chat Panel ──
   const panel = document.createElement("div");
@@ -71,34 +77,81 @@ function createChatWidget() {
   panel.id = "ecobot-panel";
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "EcoBot AI Chat");
-  panel.innerHTML = `
-    <div class="ecobot-header">
-      <div class="ecobot-header-info">
-        <span class="ecobot-avatar" aria-hidden="true">🤖</span>
-        <div>
-          <h3 class="ecobot-title">${BOT_NAME}</h3>
-          <p class="ecobot-subtitle">AI Eco Assistant</p>
-        </div>
-      </div>
-      <button class="ecobot-close" id="ecobot-close" aria-label="Close chat">
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-    </div>
-    <div class="ecobot-messages" id="ecobot-messages" aria-live="polite">
-      <div class="ecobot-welcome">
-        <p class="ecobot-welcome-text">👋 Hi! I'm <strong>${BOT_NAME}</strong>, your AI eco assistant. Ask me anything about sustainability, climate, or how to reduce your carbon footprint!</p>
-        <div class="ecobot-suggestions" id="ecobot-suggestions"></div>
-      </div>
-    </div>
-    <form class="ecobot-input-area" id="ecobot-form">
-      <input type="text" class="ecobot-input" id="ecobot-input"
-        placeholder="Ask me anything about eco..."
-        autocomplete="off" aria-label="Type your message" />
-      <button type="submit" class="ecobot-send" id="ecobot-send" aria-label="Send message">
-        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-      </button>
-    </form>
-  `;
+  // ── Header ──
+  const header = document.createElement("div");
+  header.className = "ecobot-header";
+
+  const headerInfo = document.createElement("div");
+  headerInfo.className = "ecobot-header-info";
+  const avatar = document.createElement("span");
+  avatar.className = "ecobot-avatar";
+  avatar.setAttribute("aria-hidden", "true");
+  avatar.textContent = "🤖";
+  const headerTextWrap = document.createElement("div");
+  const titleEl = document.createElement("h3");
+  titleEl.className = "ecobot-title";
+  titleEl.textContent = BOT_NAME;
+  const subtitleEl = document.createElement("p");
+  subtitleEl.className = "ecobot-subtitle";
+  subtitleEl.textContent = "AI Eco Assistant";
+  headerTextWrap.append(titleEl, subtitleEl);
+  headerInfo.append(avatar, headerTextWrap);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "ecobot-close";
+  closeBtn.id = "ecobot-close";
+  closeBtn.setAttribute("aria-label", "Close chat");
+  const closeIcon = document.createElement("i");
+  closeIcon.className = "fa-solid fa-xmark";
+  closeIcon.setAttribute("aria-hidden", "true");
+  closeBtn.append(closeIcon);
+
+  header.append(headerInfo, closeBtn);
+
+  // ── Messages area ──
+  const messagesDiv = document.createElement("div");
+  messagesDiv.className = "ecobot-messages";
+  messagesDiv.id = "ecobot-messages";
+  messagesDiv.setAttribute("aria-live", "polite");
+
+  const welcomeDiv = document.createElement("div");
+  welcomeDiv.className = "ecobot-welcome";
+  const welcomeText = document.createElement("p");
+  welcomeText.className = "ecobot-welcome-text";
+  welcomeText.append(
+    "\uD83D\uDC4B Hi! I'm ",
+    Object.assign(document.createElement("strong"), { textContent: BOT_NAME }),
+    ", your AI eco assistant. Ask me anything about sustainability, climate, or how to reduce your carbon footprint!",
+  );
+  const suggestionsDiv = document.createElement("div");
+  suggestionsDiv.className = "ecobot-suggestions";
+  suggestionsDiv.id = "ecobot-suggestions";
+  welcomeDiv.append(welcomeText, suggestionsDiv);
+  messagesDiv.append(welcomeDiv);
+
+  // ── Input form ──
+  const form = document.createElement("form");
+  form.className = "ecobot-input-area";
+  form.id = "ecobot-form";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "ecobot-input";
+  input.id = "ecobot-input";
+  input.placeholder = "Ask me anything about eco...";
+  input.autocomplete = "off";
+  input.setAttribute("aria-label", "Type your message");
+  const sendBtn = document.createElement("button");
+  sendBtn.type = "submit";
+  sendBtn.className = "ecobot-send";
+  sendBtn.id = "ecobot-send";
+  sendBtn.setAttribute("aria-label", "Send message");
+  const sendIcon = document.createElement("i");
+  sendIcon.className = "fa-solid fa-paper-plane";
+  sendIcon.setAttribute("aria-hidden", "true");
+  sendBtn.append(sendIcon);
+  form.append(input, sendBtn);
+
+  panel.append(header, messagesDiv, form);
 
   document.body.append(fab, panel);
 
@@ -160,6 +213,7 @@ function addMessage(role, text) {
 
   const content = document.createElement("div");
   content.className = "ecobot-msg-content";
+  // Safe: formatMessage() escapes all HTML entities before applying formatting
   content.innerHTML = formatMessage(text);
 
   const time = document.createElement("span");
@@ -196,11 +250,14 @@ function showTypingIndicator() {
   const typing = document.createElement("div");
   typing.className = "ecobot-msg ecobot-msg-bot ecobot-typing";
   typing.id = "ecobot-typing";
-  typing.innerHTML = `<div class="ecobot-msg-content">
-    <span class="ecobot-dot"></span>
-    <span class="ecobot-dot"></span>
-    <span class="ecobot-dot"></span>
-  </div>`;
+  const typingContent = document.createElement("div");
+  typingContent.className = "ecobot-msg-content";
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement("span");
+    dot.className = "ecobot-dot";
+    typingContent.append(dot);
+  }
+  typing.append(typingContent);
   messagesEl.append(typing);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
