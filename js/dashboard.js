@@ -3,9 +3,9 @@
  * User dashboard rendering — footprint history chart (Chart.js),
  * summary statistics, activity timeline, and score comparisons.
  */
-import { ECO_CONFIG } from "./config.js?v=firebase-config-33";
-import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady } from "./app.js?v=firebase-config-33";
-import { ecoService } from "./firebase.js?v=firebase-config-33";
+import { ECO_CONFIG } from "./config.js?v=firebase-config-34";
+import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js?v=firebase-config-34";
+import { ecoService } from "./firebase.js?v=firebase-config-34";
 
 let breakdownChart;
 let trendChart;
@@ -262,6 +262,60 @@ function renderActivityLog(activities) {
   });
 }
 
+/**
+ * Downloads footprint history as a CSV file.
+ * @param {Array<Object>} footprints - Array of footprint records.
+ * @returns {void}
+ */
+function exportCSV(footprints) {
+  if (!footprints?.length) { showToast('No data to export yet.'); return; }
+  const headers = ['Date', 'Total (kg)', 'Transport', 'Food', 'Energy', 'Shopping'];
+  const rows = footprints.map(f => [
+    f.date || 'N/A',
+    f.totalKg || 0,
+    f.breakdown?.transport || 0,
+    f.breakdown?.food || 0,
+    f.breakdown?.energy || 0,
+    f.breakdown?.shopping || 0,
+  ].join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ecotrace-footprint-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Footprint history exported as CSV.');
+}
+
+/**
+ * Renders a monthly trend comparison message.
+ * @param {Array<Object>} footprints - Sorted footprint records (newest first).
+ * @returns {void}
+ */
+function renderMonthlyTrend(footprints) {
+  const panel = document.querySelector('[data-monthly-comparison]');
+  const text = document.querySelector('[data-monthly-text]');
+  if (!panel || !text || footprints.length < 2) return;
+  const latest = footprints[0].totalKg;
+  const previous = footprints[1].totalKg;
+  const diff = previous - latest;
+  const pct = Math.abs(Math.round((diff / previous) * 100));
+  if (diff > 0) {
+    text.textContent = `Great job! You reduced your footprint by ${pct}%`
+      + ` (${Math.abs(diff).toLocaleString()} kg) compared to your previous calculation.`;
+    text.style.color = 'var(--forest)';
+  } else if (diff < 0) {
+    text.textContent = `Your footprint increased by ${pct}%`
+      + ` (${Math.abs(diff).toLocaleString()} kg) since your last calculation.`
+      + ` Try the tips page for ideas!`;
+    text.style.color = 'var(--danger)';
+  } else {
+    text.textContent = 'Your footprint is the same as your last calculation.';
+  }
+  panel.hidden = false;
+}
+
 async function renderDashboard(user, profile) {
   const [footprints, activities] = await Promise.all([ecoService.getFootprints(user), ecoService.getActivities(user)]);
   const sorted = sortFootprints(footprints);
@@ -271,6 +325,8 @@ async function renderDashboard(user, profile) {
   renderBreakdownChart(latest);
   renderTrendChart(sorted);
   renderActivityLog(activities);
+  renderMonthlyTrend(sorted);
+  document.querySelector('[data-export-csv]')?.addEventListener('click', () => exportCSV(sorted));
   setText("[data-streak-days]", `${profile?.streak || 5}-day reduction streak!`);
   setText("[data-dashboard-points]", `${Number(profile?.greenPoints || 0).toLocaleString()} points`);
   setText("[data-dashboard-saved]", formatKg(profile?.co2Saved || 0));

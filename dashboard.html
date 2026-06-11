@@ -18,7 +18,7 @@
     <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="css/styles.css?v=firebase-config-33">
+    <link rel="stylesheet" href="css/styles.css?v=firebase-config-34">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
   </head>
   <body data-auth-required>
@@ -86,6 +86,17 @@
               </div>
             </article>
           </div>
+
+          <div style="margin-block: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-small" type="button" data-export-csv>
+              <i class="fa-solid fa-file-csv" aria-hidden="true"></i> Export as CSV
+            </button>
+          </div>
+
+          <div class="monthly-comparison" data-monthly-comparison hidden>
+            <h3>Monthly Trend</h3>
+            <p data-monthly-text></p>
+          </div>
         </div>
 
         <aside class="panel">
@@ -142,7 +153,7 @@
         <div class="footer-links"><a href="calculator.html">Recalculate</a><a href="challenges.html">Challenges</a><a href="profile.html">Profile</a></div>
       </div>
     </footer>
-    <script type="module" src="js/app.js?v=firebase-config-33"></script>
-    <script type="module" src="js/dashboard.js?v=firebase-config-33"></script>
-      <script type="module" src="js/features.js?v=firebase-config-33"></script></body>
+    <script type="module" src="js/app.js?v=firebase-config-34"></script>
+    <script type="module" src="js/dashboard.js?v=firebase-config-34"></script>
+      <script type="module" src="js/features.js?v=firebase-config-34"></script></body>
 </html>

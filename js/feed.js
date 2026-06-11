@@ -3,10 +3,10 @@
  * Environmental news feed with Google Custom Search integration,
  * topic filtering, article-read tracking, and Web Share API support.
  */
-import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-33";
-import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-33";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
-import { ecoService } from "./firebase.js?v=firebase-config-33";
+import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-34";
+import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-34";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
+import { ecoService } from "./firebase.js?v=firebase-config-34";
 
 const tabs = document.querySelector("[data-feed-tabs]");
 const grid = document.querySelector("[data-feed-grid]");

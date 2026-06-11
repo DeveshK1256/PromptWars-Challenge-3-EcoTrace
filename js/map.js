@@ -5,9 +5,9 @@
  * fallback), category filtering, and a comprehensive fallback dataset when
  * API keys are unavailable.
  */
-import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-33";
-import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-33";
-import { setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-34";
+import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-34";
+import { setButtonBusy, showToast } from "./app.js?v=firebase-config-34";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 

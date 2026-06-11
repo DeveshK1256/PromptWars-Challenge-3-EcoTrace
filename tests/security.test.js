@@ -96,3 +96,59 @@ describe("Firestore rules file", () => {
     expect(rulesContent).toContain("breakdown");
   });
 });
+
+const netlifyToml = readFileSync(resolve("netlify.toml"), "utf-8");
+
+describe("Netlify security headers", () => {
+  it("has Content-Security-Policy header", () => {
+    expect(netlifyToml).toContain("Content-Security-Policy");
+    expect(netlifyToml).toContain("default-src 'self'");
+    expect(netlifyToml).toContain("object-src 'none'");
+  });
+
+  it("has X-Content-Type-Options: nosniff", () => {
+    expect(netlifyToml).toContain('X-Content-Type-Options = "nosniff"');
+  });
+
+  it("has X-Frame-Options: DENY", () => {
+    expect(netlifyToml).toContain('X-Frame-Options = "DENY"');
+  });
+
+  it("has Referrer-Policy", () => {
+    expect(netlifyToml).toContain("Referrer-Policy");
+    expect(netlifyToml).toContain("strict-origin-when-cross-origin");
+  });
+
+  it("has Permissions-Policy restricting sensitive APIs", () => {
+    expect(netlifyToml).toContain("Permissions-Policy");
+    expect(netlifyToml).toContain("camera=()");
+    expect(netlifyToml).toContain("microphone=()");
+    expect(netlifyToml).toContain("payment=()");
+  });
+
+  it("has Cross-Origin-Opener-Policy", () => {
+    expect(netlifyToml).toContain("Cross-Origin-Opener-Policy");
+  });
+
+  it("has Strict-Transport-Security (HSTS)", () => {
+    expect(netlifyToml).toContain("Strict-Transport-Security");
+    expect(netlifyToml).toContain("includeSubDomains");
+  });
+
+  it("sets immutable cache for JS and CSS", () => {
+    expect(netlifyToml).toContain('max-age=31536000, immutable');
+  });
+
+  it("disables HTML caching for fresh content", () => {
+    expect(netlifyToml).toContain('for = "/*.html"');
+    expect(netlifyToml).toContain("no-cache");
+  });
+
+  it("CSP blocks form submissions to external origins", () => {
+    expect(netlifyToml).toContain("form-action 'self'");
+  });
+
+  it("CSP enforces HTTPS", () => {
+    expect(netlifyToml).toContain("upgrade-insecure-requests");
+  });
+});
