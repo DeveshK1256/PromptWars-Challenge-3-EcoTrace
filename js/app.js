@@ -1,6 +1,6 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-28";
-import { ecoService } from "./firebase.js?v=firebase-config-28";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-28";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-29";
+import { ecoService } from "./firebase.js?v=firebase-config-29";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-29";
 
 export const appState = {
   user: null,
@@ -386,20 +386,10 @@ function initAuthActions() {
       btn.disabled = true;
       btn.textContent = "Sending...";
       try {
-        const isConfigured = await ecoService.isConfigured();
         await ecoService.sendPasswordReset(email);
-        if (isConfigured) {
-          showToast("If " + email + " is registered, a reset link was sent. Check inbox & spam folder.", "success");
-        } else {
-          showToast("Demo mode: Password reset is simulated. Sign in with your existing password or create a new account.", "error");
-        }
+        showToast("Password reset email sent to " + email + "! Check your inbox and spam folder.", "success");
       } catch (error) {
-        const msg = error.code === "auth/user-not-found"
-          ? "No account found for this email. Try creating a new account."
-          : error.code === "auth/too-many-requests"
-          ? "Too many attempts. Please try again later."
-          : error.message || "Could not send reset email. Check the address.";
-        showToast(msg, "error");
+        showToast(error.message || "Could not send reset email.", "error");
       } finally {
         btn.disabled = false;
         btn.textContent = "Forgot password?";
@@ -440,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-28").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-29").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, 2000);
   document.addEventListener("click", loadChatbot, { once: true });

@@ -1,4 +1,4 @@
-import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-28";
+import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-29";
 
 const STORAGE_KEYS = Object.freeze({
   profile: "ecotrace.profile",
@@ -402,26 +402,22 @@ export const ecoService = {
   async sendPasswordReset(email) {
     const runtime = await initFirebase();
     if (!runtime) {
-      const accountKey = normalizeEmail(email);
-      const accounts = readDemoAccounts();
-      if (!accounts[accountKey]) {
-        throw createAuthError("auth/user-not-found", "No account exists for this email.");
-      }
-      throw createAuthError("auth/demo-mode", "Demo mode: Password reset requires Firebase. Please create a new account with email/password while signed out.");
+      throw createAuthError("auth/demo-mode", "You're in demo mode — accounts are stored locally in your browser. Password reset emails cannot be sent. Try signing in with the password you used to create the account, or create a new account.");
     }
     try {
-      const methods = await runtime.authMod.fetchSignInMethodsForEmail(runtime.auth, email);
-      if (methods.length === 0) {
-        throw createAuthError("auth/user-not-found", "This email is not registered. Please create an account first using the 'Create account' button.");
-      }
-      if (!methods.includes("password")) {
-        throw createAuthError("auth/no-password", "This account uses Google sign-in. No password to reset — just click 'Sign in with Google'.");
-      }
       await runtime.authMod.sendPasswordResetEmail(runtime.auth, email);
     } catch (err) {
-      if (err.code && err.code.startsWith("auth/")) throw err;
+      if (err.code === "auth/user-not-found") {
+        throw createAuthError("auth/user-not-found", "This email is not registered in Firebase. If you created your account while offline or in demo mode, it only exists locally. Please create a new account.");
+      }
+      if (err.code === "auth/invalid-email") {
+        throw createAuthError("auth/invalid-email", "Please enter a valid email address.");
+      }
+      if (err.code === "auth/too-many-requests") {
+        throw createAuthError("auth/too-many-requests", "Too many attempts. Please try again later.");
+      }
       console.error("Password reset error:", err);
-      throw createAuthError("auth/unknown", err.message || "Failed to send password reset email.");
+      throw err;
     }
   },
 

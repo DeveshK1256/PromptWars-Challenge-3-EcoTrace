@@ -1,5 +1,5 @@
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-28";
-import { FALLBACK_TIPS } from "./data.js?v=firebase-config-28";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-29";
+import { FALLBACK_TIPS } from "./data.js?v=firebase-config-29";
 
 function buildPrompt(profile) {
   return `You are EcoTrace, a carbon footprint coach for users in India.
