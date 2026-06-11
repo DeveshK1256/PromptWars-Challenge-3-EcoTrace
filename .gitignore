@@ -1,6 +1,7 @@
 node_modules/
 .netlify/
 .firebase/
+dist/
 *.log
 .DS_Store
 Thumbs.db

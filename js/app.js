@@ -1,7 +1,6 @@
 import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-16";
 import { ecoService } from "./firebase.js?v=firebase-config-16";
 import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-16";
-import { initEcoBot } from "./chatbot.js?v=firebase-config-16";
 
 export const appState = {
   user: null,
@@ -389,5 +388,20 @@ document.addEventListener("DOMContentLoaded", () => {
   initFooterYear();
   initReducedMotionToggle();
   initAuth();
-  initEcoBot();
+
+  // Lazy-load chatbot after initial render to avoid blocking page load
+  let chatbotLoaded = false;
+  function loadChatbot() {
+    if (chatbotLoaded) return;
+    chatbotLoaded = true;
+    import("./chatbot.js?v=firebase-config-16").then((m) => m.initEcoBot()).catch(() => {});
+  }
+  setTimeout(loadChatbot, 2000);
+  document.addEventListener("click", loadChatbot, { once: true });
+  document.addEventListener("keydown", loadChatbot, { once: true });
+
+  // Register service worker for caching
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
 });
