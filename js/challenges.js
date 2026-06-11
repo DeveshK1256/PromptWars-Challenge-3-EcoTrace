@@ -1,6 +1,6 @@
-import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-29";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-29";
-import { ecoService } from "./firebase.js?v=firebase-config-29";
+import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-30";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-30";
+import { ecoService } from "./firebase.js?v=firebase-config-30";
 
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");
