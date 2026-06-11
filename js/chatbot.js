@@ -54,11 +54,10 @@ let isOpen = false;
 let isTyping = false;
 
 /**
- * Builds the floating chat widget DOM (FAB button + slide-out panel),
- * populates suggested-question chips, and wires up event listeners.
+ * Creates the floating action button (FAB) that opens the chat panel.
+ * @returns {HTMLButtonElement} The fully assembled FAB element.
  */
-function createChatWidget() {
-  // ── Floating Button ──
+function createChatFab() {
   const fab = document.createElement("button");
   fab.className = "ecobot-fab";
   fab.id = "ecobot-fab";
@@ -71,14 +70,14 @@ function createChatWidget() {
   fabPulse.className = "ecobot-fab-pulse";
   fabPulse.setAttribute("aria-hidden", "true");
   fab.append(fabIcon, fabPulse);
+  return fab;
+}
 
-  // ── Chat Panel ──
-  const panel = document.createElement("div");
-  panel.className = "ecobot-panel";
-  panel.id = "ecobot-panel";
-  panel.setAttribute("role", "dialog");
-  panel.setAttribute("aria-label", "EcoBot AI Chat");
-  // ── Header ──
+/**
+ * Creates the chat panel header bar with bot info and close button.
+ * @returns {HTMLDivElement} The header element.
+ */
+function createChatHeader() {
   const header = document.createElement("div");
   header.className = "ecobot-header";
 
@@ -108,8 +107,14 @@ function createChatWidget() {
   closeBtn.append(closeIcon);
 
   header.append(headerInfo, closeBtn);
+  return header;
+}
 
-  // ── Messages area ──
+/**
+ * Creates the messages container with the welcome banner and suggestions slot.
+ * @returns {HTMLDivElement} The messages area element.
+ */
+function createChatMessages() {
   const messagesDiv = document.createElement("div");
   messagesDiv.className = "ecobot-messages";
   messagesDiv.id = "ecobot-messages";
@@ -129,8 +134,14 @@ function createChatWidget() {
   suggestionsDiv.id = "ecobot-suggestions";
   welcomeDiv.append(welcomeText, suggestionsDiv);
   messagesDiv.append(welcomeDiv);
+  return messagesDiv;
+}
 
-  // ── Input form ──
+/**
+ * Creates the chat input form with a text field and send button.
+ * @returns {HTMLFormElement} The input form element.
+ */
+function createChatInputForm() {
   const form = document.createElement("form");
   form.className = "ecobot-input-area";
   form.id = "ecobot-form";
@@ -151,23 +162,30 @@ function createChatWidget() {
   sendIcon.setAttribute("aria-hidden", "true");
   sendBtn.append(sendIcon);
   form.append(input, sendBtn);
+  return form;
+}
 
-  panel.append(header, messagesDiv, form);
-
-  document.body.append(fab, panel);
-
-  // Populate suggestions
-  const suggestionsContainer = document.getElementById("ecobot-suggestions");
+/**
+ * Populates the suggestions container with clickable question chips.
+ * @param {HTMLElement} container - The suggestions container element.
+ */
+function populateSuggestions(container) {
   SUGGESTED_QUESTIONS.forEach((q) => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "ecobot-chip";
     chip.textContent = q;
     chip.addEventListener("click", () => handleUserMessage(q));
-    suggestionsContainer.append(chip);
+    container.append(chip);
   });
+}
 
-  // ── Event Listeners ──
+/**
+ * Attaches event listeners for opening/closing the chat and submitting
+ * messages.
+ * @param {HTMLButtonElement} fab - The floating action button element.
+ */
+function setupChatEvents(fab) {
   fab.addEventListener("click", toggleChat);
   document.getElementById("ecobot-close").addEventListener("click", toggleChat);
   document.getElementById("ecobot-form").addEventListener("submit", (e) => {
@@ -183,6 +201,29 @@ function createChatWidget() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && isOpen) toggleChat();
   });
+}
+
+/**
+ * Builds the floating chat widget DOM (FAB button + slide-out panel),
+ * populates suggested-question chips, and wires up event listeners.
+ */
+function createChatWidget() {
+  const fab = createChatFab();
+
+  const panel = document.createElement("div");
+  panel.className = "ecobot-panel";
+  panel.id = "ecobot-panel";
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-label", "EcoBot AI Chat");
+
+  panel.append(createChatHeader(), createChatMessages(), createChatInputForm());
+
+  document.body.append(fab, panel);
+
+  const suggestionsContainer = document.getElementById("ecobot-suggestions");
+  populateSuggestions(suggestionsContainer);
+
+  setupChatEvents(fab);
 }
 
 /**

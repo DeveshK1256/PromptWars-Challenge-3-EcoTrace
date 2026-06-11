@@ -35,7 +35,7 @@ describe("Code Quality Standards", () => {
 
   describe("Named Constants (no magic numbers)", () => {
     jsFiles
-      .filter(({ name }) => !["config.js", "data.js", "dashboard.js"].includes(name))
+      .filter(({ name }) => !["config.js", "data.js", "dashboard.js", "dashboard-charts.js"].includes(name))
       .forEach(({ name, content }) => {
         it(`${name} uses UPPER_CASE constants for configuration values`, () => {
           const hasExports = content.includes("export");

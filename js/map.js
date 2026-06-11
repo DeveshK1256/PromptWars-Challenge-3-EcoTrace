@@ -298,6 +298,84 @@ filters.forEach((button) => {
 });
 
 /**
+ * Handles a map search when no Maps API key is configured (demo mode).
+ * Looks up the query in the fallback location dictionary, runs a fallback
+ * search, and renders the results.
+ * @param {string} query    - User search text.
+ * @param {string} category - Category filter key.
+ */
+function handleDemoSearch(query, category) {
+  const location = getLocationFallback(query);
+  const spots = searchFallback(
+    query, category, location || userPosition,
+    { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
+  );
+  renderSpotResults(
+    spots,
+    spots.length
+      ? `Found ${spots.length} demo green spots.`
+      : "No demo matches found.",
+  );
+}
+
+/**
+ * Processes live Places API search results: merges with fallback data when
+ * the API returns nothing, updates markers, and toasts the user.
+ * @param {object[]} spots             - Spots returned by the Places API.
+ * @param {string}   query             - Original user search text.
+ * @param {string}   effectiveCategory - Resolved category key.
+ * @param {string}   searchLabel       - Human-readable location label.
+ * @param {{ lat: number, lng: number }|null} resolvedLocation - Geocoded location, if any.
+ */
+function handleLiveSearchResults(spots, query, effectiveCategory, searchLabel, resolvedLocation) {
+  const fallbackCenter = resolvedLocation || userPosition;
+  const fallback = spots.length
+    ? spots
+    : searchFallback(
+        query, effectiveCategory, fallbackCenter,
+        { treatAsLocation: Boolean(resolvedLocation) || !hasGreenIntent(query) },
+      );
+  const categoryLabel = effectiveCategory === "all"
+    ? "green spot"
+    : CATEGORY_META[effectiveCategory].label.toLowerCase();
+  renderSpotResults(
+    fallback,
+    fallback.length
+      ? `Found ${fallback.length} ${categoryLabel} results near ${searchLabel}.`
+      : "No matching green spots found.",
+  );
+  setActiveCategory(effectiveCategory);
+  showToast(
+    fallback.length ? "Map search updated." : "No matching green spots found.",
+    fallback.length ? "success" : "error",
+  );
+}
+
+/**
+ * Handles errors thrown during a map search by falling back to the demo
+ * dataset and displaying a warning toast.
+ * @param {Error}  error    - The caught error.
+ * @param {string} query    - Original user search text.
+ * @param {string} category - Category filter key.
+ */
+function handleSearchError(error, query, category) {
+  logWarn('map', error);
+  const location = getLocationFallback(query)
+    || getLocationFallback(stripGreenServiceWords(query));
+  const spots = searchFallback(
+    query, category, location || userPosition,
+    { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
+  );
+  renderSpotResults(
+    spots,
+    spots.length
+      ? `Showing ${spots.length} fallback search results.`
+      : "Search failed and no fallback matches were found.",
+  );
+  showToast("Map search used fallback results.", "error");
+}
+
+/**
  * Orchestrates a full map search: resolves the location, queries the
  * Places API (or falls back to demo data), and updates the map + sidebar.
  * @param {string}                query              - User search text.
@@ -312,17 +390,7 @@ async function runMapSearch(query, category = "all", submitter = null) {
   if (submitter) setButtonBusy(submitter, true, "Searching...");
   try {
     if (!hasMapsConfig()) {
-      const location = getLocationFallback(query);
-      const spots = searchFallback(
-        query, category, location || userPosition,
-        { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
-      );
-      renderSpotResults(
-        spots,
-        spots.length
-          ? `Found ${spots.length} demo green spots.`
-          : "No demo matches found.",
-      );
+      handleDemoSearch(query, category);
       return;
     }
     await loadMapsScript();
@@ -345,41 +413,9 @@ async function runMapSearch(query, category = "all", submitter = null) {
     const searchCenter = resolvedLocation || userPosition;
     const searchLabel = resolvedLocation?.label || cleanedLocationQuery || query || "your map area";
     const spots = await searchPlaces(searchLabel, effectiveCategory, searchCenter, map);
-    const fallbackCenter = resolvedLocation || userPosition;
-    const fallback = spots.length
-      ? spots
-      : searchFallback(
-          query, effectiveCategory, fallbackCenter,
-          { treatAsLocation: Boolean(resolvedLocation) || !hasGreenIntent(query) },
-        );
-    const categoryLabel = effectiveCategory === "all"
-      ? "green spot"
-      : CATEGORY_META[effectiveCategory].label.toLowerCase();
-    renderSpotResults(
-      fallback,
-      fallback.length
-        ? `Found ${fallback.length} ${categoryLabel} results near ${searchLabel}.`
-        : "No matching green spots found.",
-    );
-    setActiveCategory(effectiveCategory);
-    showToast(
-      fallback.length ? "Map search updated." : "No matching green spots found.",
-      fallback.length ? "success" : "error",
-    );
+    handleLiveSearchResults(spots, query, effectiveCategory, searchLabel, resolvedLocation);
   } catch (error) {
-    logWarn('map', error);
-    const location = getLocationFallback(query) || getLocationFallback(stripGreenServiceWords(query));
-    const spots = searchFallback(
-      query, category, location || userPosition,
-      { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
-    );
-    renderSpotResults(
-      spots,
-      spots.length
-        ? `Showing ${spots.length} fallback search results.`
-        : "Search failed and no fallback matches were found.",
-    );
-    showToast("Map search used fallback results.", "error");
+    handleSearchError(error, query, category);
   } finally {
     if (submitter) setButtonBusy(submitter, false);
   }

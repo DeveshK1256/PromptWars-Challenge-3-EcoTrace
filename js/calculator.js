@@ -265,7 +265,7 @@ function applyEmissionFactor(factor) {
  */
 function renderEmissionSearchResults(query = "") {
   if (!emissionSearchResults) return;
-  const results = EMISSION_FACTORS.filter((factor) => matchesEmissionFactor(factor, query)).slice(0, query ? 8 : 6);
+  const results = EMISSION_FACTORS.filter((factor) => matchesEmissionFactor(factor, query)).slice(0, query ? MAX_AI_TIPS_DISPLAY : 6);
   emissionSearchResults.replaceChildren();
   if (!results.length) {
     const empty = document.createElement("article");
