@@ -2197,6 +2197,16 @@ textarea:focus-visible {
 }
 
 /* Dark mode — Auth section */
+[data-theme="dark"] .stat-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .stat-card span {
+  color: #8fb8a4;
+}
+[data-theme="dark"] .stat-card strong {
+  color: #e4efe8;
+}
 [data-theme="dark"] .auth-card {
   background: var(--surface);
   border-color: var(--line);

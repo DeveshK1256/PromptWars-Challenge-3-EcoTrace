@@ -1,7 +1,7 @@
-import { ECO_CONFIG } from "./config.js?v=firebase-config-30";
-import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-30";
-import { ecoService } from "./firebase.js?v=firebase-config-30";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-30";
+import { ECO_CONFIG } from "./config.js?v=firebase-config-31";
+import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-31";
+import { ecoService } from "./firebase.js?v=firebase-config-31";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-31";
 
 const form = document.querySelector("[data-calculator-form]");
 const panels = [...document.querySelectorAll("[data-step-panel]")];
