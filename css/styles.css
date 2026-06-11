@@ -2031,9 +2031,29 @@ textarea:focus-visible {
 [data-theme="dark"] .earth-card {
   background: linear-gradient(145deg, rgba(47, 124, 100, 0.8), rgba(29, 93, 75, 0.9));
 }
-[data-theme="dark"] .navbar {
-  background: rgba(13, 26, 21, 0.88);
+[data-theme="dark"] .navbar,
+[data-theme="dark"] .nav {
+  background: rgba(13, 26, 21, 0.92);
   backdrop-filter: blur(18px);
+}
+[data-theme="dark"] .nav-menu a {
+  color: #c5ddd2;
+}
+[data-theme="dark"] .nav-menu a:hover,
+[data-theme="dark"] .nav-menu a[aria-current="page"] {
+  color: #4ecb8e;
+  background: rgba(78, 203, 142, 0.12);
+}
+[data-theme="dark"] .brand {
+  color: #e4efe8;
+}
+[data-theme="dark"] .darkmode-toggle {
+  background: rgba(78, 203, 142, 0.12);
+  border-color: rgba(78, 203, 142, 0.25);
+  color: #4ecb8e;
+}
+[data-theme="dark"] .site-header {
+  border-color: rgba(167, 201, 87, 0.1);
 }
 [data-theme="dark"] img { filter: brightness(0.9); }
 
