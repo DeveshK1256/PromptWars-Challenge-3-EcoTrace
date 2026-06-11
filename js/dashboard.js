@@ -1,6 +1,6 @@
-import { ECO_CONFIG } from "./config.js?v=firebase-config-18";
-import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady } from "./app.js?v=firebase-config-18";
-import { ecoService } from "./firebase.js?v=firebase-config-18";
+import { ECO_CONFIG } from "./config.js?v=firebase-config-19";
+import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady } from "./app.js?v=firebase-config-19";
+import { ecoService } from "./firebase.js?v=firebase-config-19";
 
 let breakdownChart;
 let trendChart;
