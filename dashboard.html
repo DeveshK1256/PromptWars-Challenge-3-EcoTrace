@@ -18,7 +18,7 @@
     <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="css/styles.css?v=firebase-config-17">
+    <link rel="stylesheet" href="css/styles.css?v=firebase-config-18">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
   </head>
   <body data-auth-required>
@@ -36,7 +36,7 @@
           <li><a href="challenges.html" data-nav-link>Challenges</a></li>
           <li><a href="feed.html" data-nav-link>Feed</a></li>
         </ul>
-        <div class="nav-actions">
+        <button class="darkmode-toggle" type="button" data-darkmode-toggle aria-label="Toggle dark mode"><i class="fa-solid fa-moon" aria-hidden="true"></i></button><div class="nav-actions">
           <a class="btn btn-secondary btn-small" href="index.html#auth-title" data-signin-link><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
           <a class="btn btn-primary btn-small" href="index.html#auth-title" data-create-account-link><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Create account</a>
           <button class="btn btn-primary btn-small" type="button" data-signout><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign out</button>
@@ -113,6 +113,27 @@
           </section>
         </aside>
       </section>
+
+      <section class="section" aria-labelledby="heatmap-title">
+        <div class="section-heading"><div><h2 id="heatmap-title">Your Eco Activity</h2><p>365 days of climate action at a glance.</p></div></div>
+        <div data-eco-heatmap></div>
+      </section>
+
+      <section class="section" aria-labelledby="offset-title">
+        <div class="section-heading"><div><h2 id="offset-title">Offset Your Footprint</h2><p>Here's what it takes to neutralize your annual carbon emissions.</p></div></div>
+        <div class="offset-grid" data-offset-viz></div>
+      </section>
+
+      <section class="section" aria-labelledby="compare-title">
+        <div class="section-heading"><div><h2 id="compare-title">How You Compare</h2><p>Your carbon footprint vs. country averages and climate targets.</p></div></div>
+        <div class="compare-list" data-footprint-compare></div>
+      </section>
+
+      <div style="text-align:center; margin-block: 2rem;">
+        <button class="btn btn-secondary share-card-btn" type="button" data-share-card>
+          <i class="fa-solid fa-download" aria-hidden="true"></i> Download Score Card
+        </button>
+      </div>
     </main>
 
     <footer class="footer">
@@ -121,7 +142,7 @@
         <div class="footer-links"><a href="calculator.html">Recalculate</a><a href="challenges.html">Challenges</a><a href="profile.html">Profile</a></div>
       </div>
     </footer>
-    <script type="module" src="js/app.js?v=firebase-config-17"></script>
-    <script type="module" src="js/dashboard.js?v=firebase-config-17"></script>
-  </body>
+    <script type="module" src="js/app.js?v=firebase-config-18"></script>
+    <script type="module" src="js/dashboard.js?v=firebase-config-18"></script>
+      <script type="module" src="js/features.js?v=firebase-config-18"></script></body>
 </html>

@@ -1,7 +1,7 @@
-import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-17";
-import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-17";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-17";
-import { ecoService } from "./firebase.js?v=firebase-config-17";
+import { ECO_CONFIG, hasSearchConfig } from "./config.js?v=firebase-config-18";
+import { FEED_ARTICLES, NEWS_TOPICS } from "./data.js?v=firebase-config-18";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-18";
+import { ecoService } from "./firebase.js?v=firebase-config-18";
 
 const tabs = document.querySelector("[data-feed-tabs]");
 const grid = document.querySelector("[data-feed-grid]");

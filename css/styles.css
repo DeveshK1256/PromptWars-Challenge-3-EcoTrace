@@ -1991,3 +1991,354 @@ textarea:focus-visible {
   }
 }
 
+/* ================================================================
+   9 UNIQUE FEATURES — CSS
+   ================================================================ */
+
+/* ===== 1. DARK / ECO MODE ===== */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e4efe8;
+  --ink-2: #b8cfc2;
+  --muted: #8ba99a;
+  --paper: #0d1a15;
+  --paper-deep: #121f1a;
+  --surface: rgba(18, 31, 26, 0.92);
+  --surface-strong: #162420;
+  --line: rgba(167, 201, 87, 0.15);
+  --forest: #4ecb8e;
+  --forest-deep: #3db87a;
+  --sky: #1a302a;
+  --danger: #e86b5e;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] body {
+  background: radial-gradient(circle at top left, rgba(78, 203, 142, 0.08), transparent 34rem),
+    radial-gradient(circle at 86% 12%, rgba(47, 124, 100, 0.1), transparent 28rem),
+    linear-gradient(135deg, #0d1a15 0%, #121f1a 48%, #0f1d17 100%);
+}
+[data-theme="dark"] body::before {
+  background-image:
+    linear-gradient(rgba(167, 201, 87, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 201, 87, 0.04) 1px, transparent 1px);
+}
+[data-theme="dark"] .counter-card {
+  background: linear-gradient(145deg, rgba(22, 36, 32, 0.95), rgba(18, 40, 30, 0.92));
+}
+[data-theme="dark"] .earth-card {
+  background: linear-gradient(145deg, rgba(47, 124, 100, 0.8), rgba(29, 93, 75, 0.9));
+}
+[data-theme="dark"] .navbar {
+  background: rgba(13, 26, 21, 0.88);
+  backdrop-filter: blur(18px);
+}
+[data-theme="dark"] img { filter: brightness(0.9); }
+
+.darkmode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-inline-end: 0.5rem;
+}
+.darkmode-toggle:hover {
+  background: var(--forest);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* ===== 2. EARTH VITALS TICKER ===== */
+.vitals-bar {
+  overflow: hidden;
+  background: var(--forest-deep);
+  color: #fff;
+  padding-block: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.vitals-track {
+  display: flex;
+  gap: 3rem;
+  inline-size: max-content;
+  animation: marquee-vitals 45s linear infinite;
+  padding-inline: 1rem;
+}
+.vitals-track:hover { animation-play-state: paused; }
+.vitals-item { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+.vitals-item .vitals-value { color: var(--moss); font-weight: 800; }
+@keyframes marquee-vitals {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ===== 3. CARBON TIME MACHINE ===== */
+.time-machine {
+  text-align: center;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+.time-machine-year {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--forest-deep);
+}
+.time-machine-ppm {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  margin-block: 0.5rem;
+  transition: color 0.4s ease;
+}
+.time-machine-era {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.time-machine-bar {
+  position: relative;
+  block-size: 16px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-block: 1rem;
+}
+.time-machine-fill {
+  block-size: 100%;
+  border-radius: 99px;
+  transition: inline-size 0.5s ease, background 0.5s ease;
+}
+.time-machine input[type="range"] {
+  inline-size: 100%;
+  margin-block-start: 0.8rem;
+  accent-color: var(--forest);
+  cursor: pointer;
+}
+.time-machine-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-block-start: 0.3rem;
+}
+
+/* ===== 4. OFFSET VISUALIZER ===== */
+.offset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.offset-card {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s ease;
+}
+.offset-card:hover { transform: translateY(-4px); }
+.offset-emoji { font-size: 2.5rem; display: block; margin-block-end: 0.5rem; }
+.offset-number {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--forest-deep);
+}
+.offset-label { color: var(--muted); font-size: 0.88rem; margin-block-start: 0.3rem; }
+
+/* ===== 5. ECO HEATMAP ===== */
+.heatmap-wrapper { overflow-x: auto; padding-block: 0.5rem; }
+.heatmap-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  grid-auto-flow: column;
+  grid-auto-columns: 14px;
+  gap: 3px;
+}
+.heatmap-cell {
+  border-radius: 3px;
+  transition: transform 0.15s ease;
+  cursor: default;
+}
+.heatmap-cell:hover {
+  transform: scale(1.5);
+  outline: 2px solid var(--forest);
+  outline-offset: 1px;
+  z-index: 1;
+}
+.heatmap-cell[data-level="0"] { background: var(--line); }
+.heatmap-cell[data-level="1"] { background: #9be9a8; }
+.heatmap-cell[data-level="2"] { background: #40c463; }
+.heatmap-cell[data-level="3"] { background: #30a14e; }
+.heatmap-cell[data-level="4"] { background: #216e39; }
+[data-theme="dark"] .heatmap-cell[data-level="0"] { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .heatmap-cell[data-level="1"] { background: #0e4429; }
+[data-theme="dark"] .heatmap-cell[data-level="2"] { background: #006d32; }
+[data-theme="dark"] .heatmap-cell[data-level="3"] { background: #26a641; }
+[data-theme="dark"] .heatmap-cell[data-level="4"] { background: #39d353; }
+.heatmap-months {
+  display: flex;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-block-end: 0.3rem;
+  padding-inline-start: 30px;
+}
+.heatmap-months span { flex: 1; min-inline-size: 56px; }
+.heatmap-days {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-inline-end: 6px;
+}
+.heatmap-days span { block-size: 14px; display: flex; align-items: center; }
+.heatmap-container { display: flex; align-items: flex-start; }
+.heatmap-stats {
+  display: flex;
+  gap: 2rem;
+  margin-block-start: 1rem;
+  font-size: 0.88rem;
+}
+.heatmap-stats strong {
+  color: var(--forest-deep);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-block-start: 0.8rem;
+}
+.heatmap-legend-cell {
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 2px;
+}
+
+/* ===== 7. AMBIENT SOUNDS ===== */
+.ambient-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.ambient-toggle:hover { background: var(--forest); color: #fff; }
+.ambient-toggle.active {
+  background: var(--forest);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(47, 124, 100, 0.3);
+}
+
+/* ===== 8. PLEDGE WALL ===== */
+.pledge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1rem;
+}
+.pledge-card {
+  padding: 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s ease;
+}
+.pledge-card:hover { transform: translateY(-3px); }
+.pledge-text { font-size: 1rem; line-height: 1.55; color: var(--ink); margin-block-end: 0.8rem; }
+.pledge-footer { display: flex; align-items: center; justify-content: space-between; }
+.pledge-author { font-weight: 700; color: var(--forest-deep); font-size: 0.88rem; }
+.pledge-like {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.pledge-like:hover,
+.pledge-like.liked { color: #e74c6f; border-color: #e74c6f; background: rgba(231, 76, 111, 0.08); }
+.pledge-form {
+  display: flex;
+  gap: 0.6rem;
+  margin-block-end: 1.2rem;
+}
+.pledge-form input {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+/* ===== 9. FOOTPRINT COMPARISON ===== */
+.compare-list { display: flex; flex-direction: column; gap: 0.7rem; }
+.compare-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 80px;
+  align-items: center;
+  gap: 0.8rem;
+}
+.compare-label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+.compare-bar-track {
+  block-size: 22px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.compare-bar-fill {
+  block-size: 100%;
+  border-radius: 99px;
+  background: var(--sky);
+  transition: inline-size 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.compare-bar-fill.user-bar { background: linear-gradient(90deg, var(--forest), var(--moss)); }
+.compare-bar-fill.target-bar { background: linear-gradient(90deg, var(--sun), var(--clay)); }
+.compare-value {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-align: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vitals-track { animation: none; flex-wrap: wrap; inline-size: auto; }
+  .time-machine-fill { transition: none; }
+  .compare-bar-fill { transition: none; }
+}
