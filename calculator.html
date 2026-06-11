@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://maps.googleapis.com https://maps.gstatic.com https://cdn.jsdelivr.net 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com; frame-src https://accounts.google.com https://*.firebaseapp.com https://www.google.com; worker-src 'self' blob:; form-action 'self'; upgrade-insecure-requests"
+    >
+    <meta name="description" content="Calculate your annual carbon footprint across transport, food, energy, and shopping.">
+    <title>Carbon Footprint Calculator | EcoTrace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/styles.css?v=firebase-config-15">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-leaf"></i></span>EcoTrace</a>
+        <button class="nav-toggle" type="button" aria-controls="primary-menu" aria-expanded="false" data-nav-toggle><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="sr-only">Open menu</span></button>
+        <ul class="nav-menu" id="primary-menu" data-nav-menu>
+          <li><a href="index.html" data-nav-link>Home</a></li>
+          <li><a href="calculator.html" data-nav-link>Calculator</a></li>
+          <li><a href="dashboard.html" data-nav-link>Dashboard</a></li>
+          <li><a href="tips.html" data-nav-link>AI Tips</a></li>
+          <li><a href="map.html" data-nav-link>Map</a></li>
+          <li><a href="challenges.html" data-nav-link>Challenges</a></li>
+          <li><a href="feed.html" data-nav-link>Feed</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a class="btn btn-secondary btn-small" href="index.html#auth-title" data-signin-link><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
+          <a class="btn btn-primary btn-small" href="index.html#auth-title" data-create-account-link><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Create account</a>
+          <button class="btn btn-primary btn-small" type="button" data-signout><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign out</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="main" id="main">
+      <section class="page-hero" aria-labelledby="calculator-title">
+        <h1 id="calculator-title">Your annual carbon score, while you type.</h1>
+        <p>Move through four lifestyle areas and watch your footprint update in real time.</p>
+      </section>
+
+      <section class="section emission-search-section" aria-labelledby="emission-search-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="emission-search-title">Search carbon emission factors</h2>
+            <p>Look up common activities like car travel, flights, electricity, meat meals, clothes, and electronics while reviewing your total footprint.</p>
+          </div>
+        </div>
+        <form class="search-panel" data-emission-search-form role="search" aria-label="Search common carbon emission factors">
+          <div class="search-row">
+            <label class="sr-only" for="emissionSearchQuery">Search emission factor</label>
+            <input id="emissionSearchQuery" name="query" type="search" autocomplete="off" placeholder="Search car, flight, electricity, meat, clothes, phone...">
+            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search Emissions</button>
+          </div>
+        </form>
+        <div class="search-results" data-emission-search-results aria-live="polite"></div>
+      </section>
+
+      <section class="calculator-shell" aria-label="Carbon footprint calculator">
+        <aside class="stepper" aria-label="Calculator steps">
+          <button class="step-indicator" type="button" data-step-indicator="1"><span>1</span> Transport</button>
+          <button class="step-indicator" type="button" data-step-indicator="2"><span>2</span> Food</button>
+          <button class="step-indicator" type="button" data-step-indicator="3"><span>3</span> Energy</button>
+          <button class="step-indicator" type="button" data-step-indicator="4"><span>4</span> Shopping</button>
+        </aside>
+
+        <div>
+          <form class="panel" data-calculator-form>
+            <section class="step-panel" data-step-panel="1" aria-labelledby="transport-step">
+              <h2 id="transport-step">🚗 Transport</h2>
+              <div class="field-grid">
+                <label class="form-field">
+                  Car kilometres per week
+                  <input name="carKm" type="number" min="0" max="2000" value="80" inputmode="decimal">
+                </label>
+                <label class="form-field">
+                  Flights per year
+                  <input name="flights" type="number" min="0" max="80" value="2" inputmode="numeric">
+                </label>
+                <label class="form-field">
+                  Public transport usage
+                  <select name="publicTransport">
+                    <option value="none">None</option>
+                    <option value="occasional">Occasional</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="daily">Daily</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="step-panel" data-step-panel="2" aria-labelledby="food-step" hidden>
+              <h2 id="food-step">🍔 Food</h2>
+              <fieldset class="radio-grid">
+                <legend class="sr-only">Diet type</legend>
+                <label class="radio-card"><input type="radio" name="dietType" value="vegan"> Vegan</label>
+                <label class="radio-card"><input type="radio" name="dietType" value="vegetarian" checked> Vegetarian</label>
+                <label class="radio-card"><input type="radio" name="dietType" value="meat"> Meat-eater</label>
+              </fieldset>
+              <label class="form-field">
+                Food waste level
+                <select name="foodWaste">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+            </section>
+
+            <section class="step-panel" data-step-panel="3" aria-labelledby="energy-step" hidden>
+              <h2 id="energy-step">⚡ Energy</h2>
+              <div class="field-grid">
+                <label class="form-field">
+                  Monthly electricity bill in ₹
+                  <input name="electricityBill" type="number" min="0" max="100000" value="2200" inputmode="decimal">
+                </label>
+                <label class="checkbox-card"><input type="checkbox" name="climateControl" value="yes" checked> I regularly use AC or heater</label>
+                <label class="checkbox-card"><input type="checkbox" name="renewable" value="yes"> I use renewable electricity</label>
+              </div>
+            </section>
+
+            <section class="step-panel" data-step-panel="4" aria-labelledby="shopping-step" hidden>
+              <h2 id="shopping-step">🛍️ Shopping</h2>
+              <div class="field-grid">
+                <label class="form-field">
+                  Online orders per month
+                  <input name="onlineOrders" type="number" min="0" max="200" value="5" inputmode="numeric">
+                </label>
+                <label class="form-field">
+                  New clothes per year
+                  <input name="clothes" type="number" min="0" max="500" value="18" inputmode="numeric">
+                </label>
+                <label class="form-field">
+                  Electronics bought per year
+                  <input name="electronics" type="number" min="0" max="50" value="1" inputmode="numeric">
+                </label>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button class="btn btn-secondary" type="button" data-prev-step hidden>Back</button>
+              <span></span>
+              <button class="btn btn-primary" type="button" data-next-step>Next</button>
+              <button class="btn btn-primary" type="submit" data-finish-step hidden>Show My Result</button>
+            </div>
+          </form>
+
+          <section class="panel result-panel" data-result-panel hidden aria-live="polite">
+            <h2>Your footprint result</h2>
+            <p class="score-number" data-live-score>0 kg CO₂/year</p>
+            <p>= <strong data-tree-count>0</strong> trees needed to offset your footprint for one year.</p>
+            <div class="comparison-stack" aria-label="Comparison against averages">
+              <div class="comparison-row">
+                <span>You</span>
+                <span class="bar-track"><span class="bar-fill" data-comparison-bar="you"></span></span>
+                <span data-comparison-value="you">0 kg</span>
+              </div>
+              <div class="comparison-row">
+                <span>India Avg</span>
+                <span class="bar-track"><span class="bar-fill" data-comparison-bar="india"></span></span>
+                <span data-comparison-value="india">1.9T</span>
+              </div>
+              <div class="comparison-row">
+                <span>World Avg</span>
+                <span class="bar-track"><span class="bar-fill" data-comparison-bar="world"></span></span>
+                <span data-comparison-value="world">4T</span>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-primary" type="button" data-save-result>Save My Result</button>
+              <button class="btn btn-secondary" type="button" data-get-ai-tips>Get AI Tips</button>
+            </div>
+          </section>
+
+          <section class="panel ai-tips-panel" data-ai-tips-panel hidden>
+            <h2>Personalized AI tips</h2>
+            <p class="muted" data-ai-tips-status></p>
+            <div data-ai-tips-list></div>
+          </section>
+        </div>
+
+        <aside class="score-card score-sidebar" aria-live="polite">
+          <h3>Live CO₂ score</h3>
+          <span class="score-number" data-live-score>0 kg CO₂/year</span>
+          <ul class="breakdown-list">
+            <li class="breakdown-row">
+              <span><span>Transport</span><span data-category-score="transport">0 kg</span></span>
+              <span class="bar-track"><span class="bar-fill" data-category-bar="transport"></span></span>
+            </li>
+            <li class="breakdown-row">
+              <span><span>Food</span><span data-category-score="food">0 kg</span></span>
+              <span class="bar-track"><span class="bar-fill" data-category-bar="food"></span></span>
+            </li>
+            <li class="breakdown-row">
+              <span><span>Energy</span><span data-category-score="energy">0 kg</span></span>
+              <span class="bar-track"><span class="bar-fill" data-category-bar="energy"></span></span>
+            </li>
+            <li class="breakdown-row">
+              <span><span>Shopping</span><span data-category-score="shopping">0 kg</span></span>
+              <span class="bar-track"><span class="bar-fill" data-category-bar="shopping"></span></span>
+            </li>
+          </ul>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p>&copy; <span data-current-year></span> EcoTrace. Small changes, measurable impact.</p>
+        <div class="footer-links"><a href="dashboard.html">Dashboard</a><a href="tips.html">AI Tips</a><a href="tests/test-cases.md">Tests</a></div>
+      </div>
+    </footer>
+    <script type="module" src="js/app.js?v=firebase-config-15"></script>
+    <script type="module" src="js/calculator.js?v=firebase-config-15"></script>
+  </body>
+</html>

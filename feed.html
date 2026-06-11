@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://maps.googleapis.com https://maps.gstatic.com https://cdn.jsdelivr.net 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com https://www.googleapis.com; frame-src https://accounts.google.com https://*.firebaseapp.com https://www.google.com; worker-src 'self' blob:; form-action 'self'; upgrade-insecure-requests"
+    >
+    <meta name="description" content="EcoTrace awareness feed with climate, renewable energy, sustainability, and India environment stories.">
+    <title>Awareness Feed | EcoTrace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/styles.css?v=firebase-config-15">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-leaf"></i></span>EcoTrace</a>
+        <button class="nav-toggle" type="button" aria-controls="primary-menu" aria-expanded="false" data-nav-toggle><i class="fa-solid fa-bars" aria-hidden="true"></i><span class="sr-only">Open menu</span></button>
+        <ul class="nav-menu" id="primary-menu" data-nav-menu>
+          <li><a href="index.html" data-nav-link>Home</a></li>
+          <li><a href="calculator.html" data-nav-link>Calculator</a></li>
+          <li><a href="dashboard.html" data-nav-link>Dashboard</a></li>
+          <li><a href="tips.html" data-nav-link>AI Tips</a></li>
+          <li><a href="map.html" data-nav-link>Map</a></li>
+          <li><a href="challenges.html" data-nav-link>Challenges</a></li>
+          <li><a href="feed.html" data-nav-link>Feed</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a class="btn btn-secondary btn-small" href="index.html#auth-title" data-signin-link><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
+          <a class="btn btn-primary btn-small" href="index.html#auth-title" data-create-account-link><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Create account</a>
+          <button class="btn btn-primary btn-small" type="button" data-signout><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign out</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="main" id="main">
+      <section class="page-hero" aria-labelledby="feed-title">
+        <h1 id="feed-title">Read, learn, earn.</h1>
+        <p>Browse climate change, renewable energy, sustainability tips, and India environment updates. Each article you log earns 5 Green Points.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" data-refresh-feed><i class="fa-solid fa-newspaper" aria-hidden="true"></i> Refresh feed</button>
+          <p class="muted" data-feed-status aria-live="polite">Loading feed...</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="feed-filter-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="feed-filter-title">Awareness feed</h2>
+            <p>Powered by Google Custom Search when configured, with curated content as a stable fallback.</p>
+          </div>
+          <p class="muted" data-points-wallet>0 Green Points</p>
+        </div>
+        <div class="filter-tabs" data-feed-tabs aria-label="Feed category filters"></div>
+        <div class="feed-grid" data-feed-grid></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p>&copy; <span data-current-year></span> EcoTrace. Awareness is fuel for action.</p>
+        <div class="footer-links"><a href="challenges.html">Challenges</a><a href="tips.html">AI Tips</a><a href="map.html">Eco Map</a></div>
+      </div>
+    </footer>
+    <script type="module" src="js/app.js?v=firebase-config-15"></script>
+    <script type="module" src="js/feed.js?v=firebase-config-15"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "challenge-3",
+  "version": "1.0.0",
+  "description": "EcoTrace is a multi-page Carbon Footprint Awareness Platform built with HTML5, CSS3, and vanilla JavaScript. It includes a calculator, dashboard, Gemini-powered tips, Google Maps action map, challenges, profile, and awareness feed.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^4.1.8"
+  }
+}

@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://www.gstatic.com https://maps.googleapis.com https://maps.gstatic.com https://cdn.jsdelivr.net 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self' https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://generativelanguage.googleapis.com; frame-src https://accounts.google.com https://*.firebaseapp.com https://www.google.com; worker-src 'self' blob:; form-action 'self'; upgrade-insecure-requests"
+    >
+    <meta name="description" content="EcoTrace helps individuals understand, track, and reduce their carbon footprint with calculators, dashboards, AI tips, maps, and challenges.">
+    <title>EcoTrace | Carbon Footprint Awareness Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="css/styles.css?v=firebase-config-15">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-leaf"></i></span>
+          EcoTrace
+        </a>
+        <button class="nav-toggle" type="button" aria-controls="primary-menu" aria-expanded="false" data-nav-toggle>
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          <span class="sr-only">Open menu</span>
+        </button>
+        <ul class="nav-menu" id="primary-menu" data-nav-menu>
+          <li><a href="index.html" data-nav-link>Home</a></li>
+          <li><a href="calculator.html" data-nav-link>Calculator</a></li>
+          <li><a href="dashboard.html" data-nav-link>Dashboard</a></li>
+          <li><a href="tips.html" data-nav-link>AI Tips</a></li>
+          <li><a href="map.html" data-nav-link>Map</a></li>
+          <li><a href="challenges.html" data-nav-link>Challenges</a></li>
+          <li><a href="feed.html" data-nav-link>Feed</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a class="btn btn-secondary btn-small" href="#auth-title" data-signin-link><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign in</a>
+          <a class="btn btn-primary btn-small" href="#auth-title" data-create-account-link><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Create account</a>
+          <button class="btn btn-primary btn-small" type="button" data-signout><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign out</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="main" id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">Know Your Carbon. Change Your World.</h1>
+          <p>
+            EcoTrace turns everyday choices into a clear carbon score, practical reduction actions,
+            local green spots, and friendly challenges you can actually finish.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="calculator.html">
+              <i class="fa-solid fa-calculator" aria-hidden="true"></i> Calculate My Footprint
+            </a>
+            <a class="btn btn-secondary" href="#auth-title" data-signin-link>
+              <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Sign In to Your Account
+            </a>
+            <a class="btn btn-secondary" href="dashboard.html" data-dashboard-link>
+              <i class="fa-solid fa-chart-line" aria-hidden="true"></i> Go to Dashboard
+            </a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Live emissions visualization">
+          <span class="orbit" aria-hidden="true"></span>
+          <article class="counter-card">
+            <div class="counter-label">
+              <span>Global CO₂ emitted this year</span>
+              <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+            </div>
+            <div class="counter-number">
+              <span data-co2-counter>0</span>
+              <small>tonnes</small>
+            </div>
+            <p>Visual estimate based on annual global emissions, updated every second for awareness.</p>
+          </article>
+          <article class="earth-card">
+            <h2>Your climate command center</h2>
+            <p>Track emissions, collect Green Points, and turn lower-carbon habits into a visible streak.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="country-emissions-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="country-emissions-title">Country-wise CO₂ Emissions</h2>
+            <p>Top 15 emitting nations ranked by annual CO₂ output in million tonnes. Data from Global Carbon Project.</p>
+          </div>
+        </div>
+        <div class="country-emissions-panel" data-country-emissions>
+          <div class="filter-tabs" data-year-tabs role="tablist" aria-label="Select year"></div>
+          <div class="country-table-wrap" data-country-table></div>
+          <p class="country-attribution">Source: Global Carbon Project · Values in million tonnes CO₂</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="features-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="features-title">Three loops that build better habits</h2>
+            <p>EcoTrace combines measurement, nudges, and social motivation without turning climate action into homework.</p>
+          </div>
+          <a class="btn btn-ghost" href="dashboard.html">View Dashboard</a>
+        </div>
+        <div class="card-grid">
+          <article class="feature-card">
+            <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+            <h3>Track</h3>
+            <p>Measure transport, food, energy, and shopping emissions with a live annual CO₂ score.</p>
+          </article>
+          <article class="feature-card">
+            <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i>
+            <h3>Reduce</h3>
+            <p>Get Gemini-powered suggestions and fallback tips that target the categories driving your footprint.</p>
+          </article>
+          <article class="feature-card">
+            <i class="fa-solid fa-trophy" aria-hidden="true"></i>
+            <h3>Compete</h3>
+            <p>Accept weekly challenges, earn badges, climb the leaderboard, and keep your reduction streak alive.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="auth-title">
+        <div class="page-grid">
+          <div class="section-heading">
+            <div>
+              <h2 id="auth-title">Start with one score</h2>
+              <p>
+                Use Google sign-in for the fastest path, or create an email/password account.
+                Your saved footprint history and Green Points are stored in Firestore when Firebase is configured.
+              </p>
+            </div>
+          </div>
+          <form class="auth-card" data-auth-form>
+            <h3>Create or access your EcoTrace account</h3>
+            <label class="form-field">
+              Name
+              <input name="displayName" autocomplete="name" placeholder="Your name">
+            </label>
+            <label class="form-field">
+              Email
+              <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+            </label>
+            <label class="form-field">
+              Password
+              <input name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
+            </label>
+            <div class="hero-actions">
+              <button class="btn btn-primary" type="submit" name="authAction" value="signin">Sign in</button>
+              <button class="btn btn-secondary" type="submit" name="authAction" value="signup">Create account</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="testimonials-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="testimonials-title">What our users say</h2>
+            <p>Real people, real impact — everyday climate action stories.</p>
+          </div>
+        </div>
+        <div class="marquee-wrapper" aria-label="User reviews, scrolling automatically">
+          <div class="marquee-track">
+            <!-- Original set -->
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"The tree offset visual finally made my electricity use feel concrete. I cut my AC time the same week."</blockquote>
+              <div class="review-author"><span class="review-avatar">🧑‍💻</span><cite>Priya, Bengaluru</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"I used the map to find a recycling center near my office. The points were fun, but the convenience made it stick."</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍💼</span><cite>Arjun, Pune</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"The challenge board turned climate action into something my friends and I could do together."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🎓</span><cite>Meera, Delhi NCR</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"EcoBot answered all my questions about composting. It's like having a sustainability coach in my pocket!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🌾</span><cite>Sneha, Hyderabad</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="4 stars">★★★★☆</div>
+              <blockquote>"Tracking my carbon footprint month by month on the dashboard is so motivating. Down 15% already!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍🔬</span><cite>Rahul, Mumbai</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"I showed the country emissions table to my students. Now they understand why every tonne matters."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🏫</span><cite>Ananya, Chennai</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"Switched to plant-based meals 3 days a week after using the calculator. The CO₂ savings were eye-opening."</blockquote>
+              <div class="review-author"><span class="review-avatar">🧑‍🍳</span><cite>Karan, Jaipur</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="4 stars">★★★★☆</div>
+              <blockquote>"The AI tips are surprisingly practical. No guilt, just clear steps I can actually take today."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍💻</span><cite>Divya, Kolkata</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"Love the Green Points system! My kids compete to earn badges by completing weekly eco challenges."</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍👧‍👦</span><cite>Vikram, Ahmedabad</cite></div>
+            </article>
+            <article class="testimonial-card">
+              <div class="review-stars" aria-label="5 stars">★★★★★</div>
+              <blockquote>"Finally an app that makes sustainability feel achievable, not overwhelming. Beautifully designed too!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🎨</span><cite>Riya, Lucknow</cite></div>
+            </article>
+            <!-- Duplicate set for seamless loop -->
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"The tree offset visual finally made my electricity use feel concrete. I cut my AC time the same week."</blockquote>
+              <div class="review-author"><span class="review-avatar">🧑‍💻</span><cite>Priya, Bengaluru</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"I used the map to find a recycling center near my office. The points were fun, but the convenience made it stick."</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍💼</span><cite>Arjun, Pune</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"The challenge board turned climate action into something my friends and I could do together."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🎓</span><cite>Meera, Delhi NCR</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"EcoBot answered all my questions about composting. It's like having a sustainability coach in my pocket!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🌾</span><cite>Sneha, Hyderabad</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★☆</div>
+              <blockquote>"Tracking my carbon footprint month by month on the dashboard is so motivating. Down 15% already!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍🔬</span><cite>Rahul, Mumbai</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"I showed the country emissions table to my students. Now they understand why every tonne matters."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🏫</span><cite>Ananya, Chennai</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"Switched to plant-based meals 3 days a week after using the calculator. The CO₂ savings were eye-opening."</blockquote>
+              <div class="review-author"><span class="review-avatar">🧑‍🍳</span><cite>Karan, Jaipur</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★☆</div>
+              <blockquote>"The AI tips are surprisingly practical. No guilt, just clear steps I can actually take today."</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍💻</span><cite>Divya, Kolkata</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"Love the Green Points system! My kids compete to earn badges by completing weekly eco challenges."</blockquote>
+              <div class="review-author"><span class="review-avatar">👨‍👧‍👦</span><cite>Vikram, Ahmedabad</cite></div>
+            </article>
+            <article class="testimonial-card" aria-hidden="true">
+              <div class="review-stars">★★★★★</div>
+              <blockquote>"Finally an app that makes sustainability feel achievable, not overwhelming. Beautifully designed too!"</blockquote>
+              <div class="review-author"><span class="review-avatar">👩‍🎨</span><cite>Riya, Lucknow</cite></div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p>&copy; <span data-current-year></span> EcoTrace. Track carbon with care.</p>
+        <div class="footer-links" aria-label="Footer links">
+          <a href="calculator.html">Calculator</a>
+          <a href="tips.html">AI Tips</a>
+          <a href="map.html">Eco Map</a>
+          <a href="tests/test-cases.md">Tests</a>
+        </div>
+      </div>
+    </footer>
+    <script type="module" src="js/app.js?v=firebase-config-15"></script>
+  </body>
+</html>

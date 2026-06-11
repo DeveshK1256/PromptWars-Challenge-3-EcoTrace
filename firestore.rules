@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function safeUserFields() {
+      return request.resource.data.keys().hasOnly([
+        'displayName',
+        'email',
+        'photoURL',
+        'greenPoints',
+        'co2Saved',
+        'challengesCompleted',
+        'completedTips',
+        'acceptedChallenges',
+        'readArticles',
+        'badgesEarned',
+        'streak',
+        'latestFootprint',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validUserData() {
+      return request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.email is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.photoURL is string
+        && request.resource.data.photoURL.size() <= 400
+        && request.resource.data.greenPoints is int
+        && request.resource.data.greenPoints >= 0
+        && request.resource.data.greenPoints <= 1000000
+        && request.resource.data.co2Saved is int
+        && request.resource.data.co2Saved >= 0
+        && request.resource.data.challengesCompleted is int
+        && request.resource.data.challengesCompleted >= 0
+        && request.resource.data.streak is int
+        && request.resource.data.streak >= 0;
+    }
+
+    function validPointChange() {
+      return !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        || request.resource.data.greenPoints <= resource.data.greenPoints + 200;
+    }
+
+    function safeFootprintFields() {
+      return request.resource.data.keys().hasOnly([
+        'totalKg',
+        'breakdown',
+        'formData',
+        'date',
+        'createdAt'
+      ]);
+    }
+
+    match /users/{userId} {
+      allow create: if owns(userId) && safeUserFields() && validUserData() && request.resource.data.greenPoints == 0;
+      allow read, delete: if owns(userId);
+      allow update: if owns(userId) && safeUserFields() && validUserData() && validPointChange();
+
+      match /footprints/{footprintId} {
+        allow read: if owns(userId);
+        allow create: if owns(userId) && safeFootprintFields();
+        allow delete: if owns(userId);
+        allow update: if false;
+      }
+
+      match /activities/{activityId} {
+        allow read, create: if owns(userId);
+        allow delete: if owns(userId);
+        allow update: if false;
+      }
+    }
+
+    match /publicProfiles/{userId} {
+      allow read: if true;
+      allow create, update: if owns(userId)
+        && request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'greenPoints', 'updatedAt'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 80
+        && request.resource.data.photoURL is string
+        && request.resource.data.photoURL.size() <= 400
+        && request.resource.data.greenPoints is int
+        && request.resource.data.greenPoints >= 0
+        && request.resource.data.greenPoints <= 1000000
+        && request.resource.data.greenPoints == get(/databases/$(database)/documents/users/$(userId)).data.greenPoints;
+      allow delete: if owns(userId);
+    }
+  }
+}
