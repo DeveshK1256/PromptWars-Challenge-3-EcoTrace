@@ -853,6 +853,36 @@ textarea:focus-visible {
 .btn-link:hover { color: var(--forest); }
 .btn-link:disabled { opacity: 0.5; cursor: wait; }
 
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-wrapper input {
+  padding-inline-end: 3rem;
+}
+.password-toggle {
+  position: absolute;
+  inset-inline-end: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 36px;
+  block-size: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.password-toggle:hover {
+  color: var(--forest);
+  background: rgba(47, 124, 100, 0.08);
+}
+
 .radio-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

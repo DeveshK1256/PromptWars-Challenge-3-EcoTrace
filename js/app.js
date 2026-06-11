@@ -1,6 +1,6 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-25";
-import { ecoService } from "./firebase.js?v=firebase-config-25";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-25";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-26";
+import { ecoService } from "./firebase.js?v=firebase-config-26";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-26";
 
 export const appState = {
   user: null,
@@ -361,6 +361,20 @@ function initAuthActions() {
     });
   });
 
+  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const wrapper = btn.closest(".password-wrapper");
+      const input = wrapper?.querySelector("input");
+      if (!input) return;
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      btn.innerHTML = isPassword
+        ? '<i class="fa-solid fa-eye-slash" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
+      btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+    });
+  });
+
   document.querySelectorAll("[data-forgot-password]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const form = btn.closest("[data-auth-form]") || document.querySelector("[data-auth-form]");
@@ -372,8 +386,13 @@ function initAuthActions() {
       btn.disabled = true;
       btn.textContent = "Sending...";
       try {
+        const isConfigured = await ecoService.isConfigured();
         await ecoService.sendPasswordReset(email);
-        showToast("Password reset email sent! Check your inbox.", "success");
+        if (isConfigured) {
+          showToast("Password reset email sent to " + email + ". Check your inbox.", "success");
+        } else {
+          showToast("Demo mode: Password reset is simulated. Connect Firebase for real email delivery.", "error");
+        }
       } catch (error) {
         showToast(error.message || "Could not send reset email. Check the address.", "error");
       } finally {
@@ -416,7 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-25").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-26").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, 2000);
   document.addEventListener("click", loadChatbot, { once: true });

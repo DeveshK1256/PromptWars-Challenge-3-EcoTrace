@@ -1,7 +1,7 @@
-import { TIP_CATEGORIES } from "./data.js?v=firebase-config-25";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-25";
-import { ecoService } from "./firebase.js?v=firebase-config-25";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-25";
+import { TIP_CATEGORIES } from "./data.js?v=firebase-config-26";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-26";
+import { ecoService } from "./firebase.js?v=firebase-config-26";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-26";
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");
