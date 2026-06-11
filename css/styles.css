@@ -220,8 +220,10 @@ textarea:focus-visible {
 
 /* Hero auth-aware buttons */
 [data-dashboard-link] { display: none; }
+[data-profile-link] { display: none; }
 [data-auth="signed-in"] [data-signin-link] { display: none; }
 [data-auth="signed-in"] [data-dashboard-link] { display: inline-flex; }
+[data-auth="signed-in"] [data-profile-link] { display: inline-flex; }
 
 .nav-toggle {
   display: none;
