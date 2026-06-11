@@ -548,7 +548,7 @@ export function initAmbientSounds() {
   function stop() {
     playing = false;
     nodes.forEach(n => {
-      try { n.stop?.(); n.disconnect(); } catch (_e) { /* node already stopped */ }
+      try { n.stop?.(); n.disconnect(); } catch { /* node already stopped */ }
     });
     nodes = [];
     if (ctx) { ctx.close(); ctx = null; }

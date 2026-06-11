@@ -5,9 +5,9 @@
  * fallback), category filtering, and a comprehensive fallback dataset when
  * API keys are unavailable.
  */
-import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-36";
-import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-36";
-import { setButtonBusy, showToast } from "./app.js?v=firebase-config-36";
+import { ECO_CONFIG, hasMapsConfig } from "./config.js";
+import { MAP_FALLBACK_SPOTS } from "./data.js";
+import { setButtonBusy, showToast } from "./app.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -41,8 +41,6 @@ const DEFAULT_MAP_ZOOM = 13;
 /** Padding in pixels applied when fitting bounds around multiple spots. */
 const FIT_BOUNDS_PADDING_PX = 64;
 
-/** Number of top-ranked countries that receive special styling. */
-const TOP_RANK_COUNT = 3;
 
 /** Geolocation API timeout in milliseconds. */
 const GEOLOCATION_TIMEOUT_MS = 9000;

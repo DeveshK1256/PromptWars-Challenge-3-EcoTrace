@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint js/",
+    "lint": "eslint js/ --fix",
+    "format": "prettier --write \"js/**/*.js\" \"*.html\" \"css/**/*.css\"",
     "build": "node build.js",
     "deploy:prod": "node build.js && npx netlify-cli deploy --prod --dir=dist"
   },

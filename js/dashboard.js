@@ -3,9 +3,9 @@
  * User dashboard rendering — footprint history chart (Chart.js),
  * summary statistics, activity timeline, and score comparisons.
  */
-import { ECO_CONFIG } from "./config.js?v=firebase-config-36";
-import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js?v=firebase-config-36";
-import { ecoService } from "./firebase.js?v=firebase-config-36";
+import { ECO_CONFIG } from "./config.js";
+import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady, showToast } from "./app.js";
+import { ecoService } from "./firebase.js";
 
 let breakdownChart;
 let trendChart;

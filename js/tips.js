@@ -3,10 +3,10 @@
  * Personalised eco-tips page powered by Gemini AI with category
  * filtering, session caching, and tip-completion tracking.
  */
-import { TIP_CATEGORIES } from "./data.js?v=firebase-config-36";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-36";
-import { ecoService } from "./firebase.js?v=firebase-config-36";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-36";
+import { TIP_CATEGORIES } from "./data.js";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js";
+import { ecoService } from "./firebase.js";
+import { getPersonalizedTips } from "./gemini.js";
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");
