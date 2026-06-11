@@ -1,6 +1,11 @@
-import { ECO_CONFIG } from "./config.js?v=firebase-config-32";
-import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady } from "./app.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
+/**
+ * @module dashboard
+ * User dashboard rendering — footprint history chart (Chart.js),
+ * summary statistics, activity timeline, and score comparisons.
+ */
+import { ECO_CONFIG } from "./config.js?v=firebase-config-33";
+import { appState, buildEmptyState, clamp, formatDate, formatKg, onUserReady } from "./app.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
 
 let breakdownChart;
 let trendChart;

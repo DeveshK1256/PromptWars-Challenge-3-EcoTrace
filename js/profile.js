@@ -1,22 +1,63 @@
-import { BADGES } from "./data.js?v=firebase-config-32";
-import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
+/**
+ * @module profile
+ * @description Profile page logic for EcoTrace. Renders user info, eco stats,
+ * footprint history table, and handles profile editing and account deletion.
+ */
+import { BADGES } from "./data.js?v=firebase-config-33";
+import { appState, formatDate, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
+
+/* ── Magic-number constants ─────────────────────────────────────── */
+
+/** Maximum number of history rows displayed in the footprint table. */
+const MAX_HISTORY_ROWS = 12;
+
+/** Side length (px) of the SVG avatar viewBox. */
+const AVATAR_SIZE = 120;
+
+/** Font size used for the initial letter inside generated avatars. */
+const AVATAR_FONT_SIZE = 56;
+
+/** Multiplier used to convert a ratio to a percentage value. */
+const PERCENTAGE_MULTIPLIER = 100;
 
 const form = document.querySelector("[data-profile-form]");
 const historyBody = document.querySelector("[data-history-table]");
 const deleteDialog = document.querySelector("[data-delete-dialog]");
 
+/**
+ * Generates a data-URI SVG avatar showing the user's first initial.
+ * @param {string} name - The user's display name.
+ * @returns {string} A `data:image/svg+xml` URI string.
+ */
 function avatarDataUrl(name) {
   const initial = encodeURIComponent(String(name || "E").trim().charAt(0).toUpperCase() || "E");
-  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='60' fill='%232f7c64'/%3E%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='56' font-weight='700' fill='white'%3E${initial}%3C/text%3E%3C/svg%3E`;
+  return (
+    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'` +
+    ` viewBox='0 0 ${AVATAR_SIZE} ${AVATAR_SIZE}'%3E` +
+    `%3Crect width='${AVATAR_SIZE}' height='${AVATAR_SIZE}' rx='${AVATAR_SIZE / 2}' fill='%232f7c64'/%3E` +
+    `%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle'` +
+    ` font-family='Arial,sans-serif' font-size='${AVATAR_FONT_SIZE}' font-weight='700' fill='white'%3E` +
+    `${initial}%3C/text%3E%3C/svg%3E`
+  );
 }
 
+/**
+ * Sets the text content of every element matching a CSS selector.
+ * @param {string} selector - CSS selector string.
+ * @param {string} value    - Text to assign.
+ */
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach((node) => {
     node.textContent = value;
   });
 }
 
+/**
+ * Populates the profile page header and edit form with user data.
+ * @param {object|null} user    - Firebase Auth user object.
+ * @param {object|null} profile - EcoTrace profile document.
+ */
 function renderProfile(user, profile) {
   const displayName = profile?.displayName || user?.displayName || "Eco Guest";
   const email = profile?.email || user?.email || "demo@ecotrace.local";
@@ -36,6 +77,10 @@ function renderProfile(user, profile) {
   form?.elements.photoURL && (form.elements.photoURL.value = profile?.photoURL || user?.photoURL || "");
 }
 
+/**
+ * Renders the user's eco statistics (CO₂ saved, challenges, badges, points).
+ * @param {object|null} profile - EcoTrace profile document.
+ */
 function renderStats(profile) {
   const points = Number(profile?.greenPoints || 0);
   const earnedBadges = BADGES.filter((badge) => points >= badge.threshold).length;
@@ -45,13 +90,20 @@ function renderStats(profile) {
   setText("[data-stat-points]", points.toLocaleString());
 }
 
+/**
+ * Renders the footprint-history table rows, showing date, score, and
+ * percentage change from the previous entry.
+ * @param {object[]} records - Array of footprint record objects.
+ */
 function renderHistory(records) {
   if (!historyBody) return;
   historyBody.replaceChildren();
   const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
-  sorted.slice(0, 12).forEach((record, index) => {
+  sorted.slice(0, MAX_HISTORY_ROWS).forEach((record, index) => {
     const previous = sorted[index + 1];
-    const change = previous ? ((record.totalKg - previous.totalKg) / previous.totalKg) * 100 : 0;
+    const change = previous
+      ? ((record.totalKg - previous.totalKg) / previous.totalKg) * PERCENTAGE_MULTIPLIER
+      : 0;
     const row = document.createElement("tr");
     const date = document.createElement("td");
     date.textContent = formatDate(record.date);

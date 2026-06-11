@@ -1,8 +1,15 @@
-import { ECO_CONFIG } from "./config.js?v=firebase-config-32";
-import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-32";
+/**
+ * @module calculator
+ * Multi-step carbon footprint calculator with emission-factor search,
+ * real-time scoring, comparison bars, and Gemini AI-powered tips.
+ */
 
+import { ECO_CONFIG } from "./config.js?v=firebase-config-33";
+import { appState, clamp, formatKg, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-33";
+
+/** @type {HTMLFormElement|null} Main calculator form element. */
 const form = document.querySelector("[data-calculator-form]");
 const panels = [...document.querySelectorAll("[data-step-panel]")];
 const steps = [...document.querySelectorAll("[data-step-indicator]")];
@@ -10,9 +17,20 @@ const resultPanel = document.querySelector("[data-result-panel]");
 const aiTipsPanel = document.querySelector("[data-ai-tips-panel]");
 const emissionSearchForm = document.querySelector("[data-emission-search-form]");
 const emissionSearchResults = document.querySelector("[data-emission-search-results]");
+
+/** @type {number} Currently active wizard step (1-indexed). */
 let activeStep = 1;
+
+/** @type {Object|undefined} Most recent calculation result. */
 let latestResult;
 
+/**
+ * Searchable emission-factor reference database.
+ * Each entry has keywords for fuzzy matching, an estimate string,
+ * and optional `apply` fields that can prefill the calculator form.
+ *
+ * @type {Array<{id: string, category: string, title: string, estimate: string, detail: string, keywords: string[], apply?: {step: number, fields: Object}}>}
+ */
 const EMISSION_FACTORS = [
   {
     id: "car-travel",

@@ -1,4 +1,61 @@
-import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-32";
+/**
+ * @module firebase
+ * @description EcoTrace Firebase service layer. Provides authentication,
+ * Firestore profile management, footprint tracking, green-points scoring,
+ * and a leaderboard — with seamless local-storage fallback ("demo mode")
+ * when Firebase credentials are not configured.
+ */
+import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-33";
+
+/* ── Named constants ───────────────────────────────────────────────── */
+
+/** Maximum length for a user display name. */
+const MAX_DISPLAY_NAME_LENGTH = 80;
+
+/** Maximum length for a user photo URL. */
+const MAX_PHOTO_URL_LENGTH = 400;
+
+/** Maximum number of footprint records kept per user. */
+const MAX_FOOTPRINT_RECORDS = 24;
+
+/** Maximum number of activity entries kept in demo mode. */
+const MAX_ACTIVITY_ENTRIES = 20;
+
+/** Number of leaderboard entries to fetch. */
+const LEADERBOARD_LIMIT = 10;
+
+/** Maximum number of activities returned from Firestore. */
+const ACTIVITY_QUERY_LIMIT = 12;
+
+/** Default display name for new users. */
+const DEFAULT_DISPLAY_NAME = "EcoTracer";
+
+/** Default demo guest display name. */
+const DEFAULT_DEMO_GUEST_NAME = "Eco Guest";
+
+/** Default demo guest email. */
+const DEFAULT_DEMO_EMAIL = "demo@ecotrace.local";
+
+/** Default demo green-points value. */
+const DEFAULT_DEMO_GREEN_POINTS = 125;
+
+/** Default demo CO₂ saved value. */
+const DEFAULT_DEMO_CO2_SAVED = 340;
+
+/** Default demo challenges completed. */
+const DEFAULT_DEMO_CHALLENGES = 2;
+
+/** Default demo streak value. */
+const DEFAULT_DEMO_STREAK = 5;
+
+/** Points awarded for completing a tip. */
+const TIP_COMPLETION_POINTS = 10;
+
+/** Points awarded for reading an article. */
+const ARTICLE_READ_POINTS = 5;
+
+/** Hash multiplier used in the fallback (non-SubtleCrypto) hashing algorithm. */
+const HASH_MULTIPLIER = 31;
 
 const STORAGE_KEYS = Object.freeze({
   profile: "ecotrace.profile",
@@ -10,23 +67,29 @@ const STORAGE_KEYS = Object.freeze({
 const DEMO_UID = "demo-user";
 const DEFAULT_PROFILE = Object.freeze({
   uid: DEMO_UID,
-  displayName: "Eco Guest",
-  email: "demo@ecotrace.local",
+  displayName: DEFAULT_DEMO_GUEST_NAME,
+  email: DEFAULT_DEMO_EMAIL,
   photoURL: "",
-  greenPoints: 125,
-  co2Saved: 340,
-  challengesCompleted: 2,
+  greenPoints: DEFAULT_DEMO_GREEN_POINTS,
+  co2Saved: DEFAULT_DEMO_CO2_SAVED,
+  challengesCompleted: DEFAULT_DEMO_CHALLENGES,
   completedTips: [],
   acceptedChallenges: ["unplug-devices"],
   readArticles: [],
   badgesEarned: ["seedling", "starter"],
-  streak: 5,
+  streak: DEFAULT_DEMO_STREAK,
   isDemo: true,
 });
 
 let firebasePromise;
 let firebaseRuntime;
 
+/**
+ * Reads and parses a JSON value from localStorage.
+ * @param {string} key - The localStorage key.
+ * @param {*} fallback - Value returned when the key is missing or unparseable.
+ * @returns {*} The parsed value or the fallback.
+ */
 function readJson(key, fallback) {
   try {
     const stored = localStorage.getItem(key);
@@ -37,20 +100,43 @@ function readJson(key, fallback) {
   }
 }
 
+/**
+ * Serialises a value to JSON and writes it to localStorage.
+ * @param {string} key - The localStorage key.
+ * @param {*} value - The value to serialise.
+ */
 function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+/**
+ * Normalises an email address to a lower-case, trimmed string.
+ * @param {string} email - The raw email address.
+ * @returns {string} Normalised email.
+ */
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+/**
+ * Creates an Error object with a Firebase-style `.code` property.
+ * @param {string} code - The error code (e.g. "auth/wrong-password").
+ * @param {string} message - Human-readable error message.
+ * @returns {Error} The decorated Error instance.
+ */
 function createAuthError(code, message) {
   const error = new Error(message);
   error.code = code;
   return error;
 }
 
+/**
+ * Hashes a demo-mode password using SHA-256 (Web Crypto) or a simple
+ * numeric fallback when SubtleCrypto is unavailable.
+ * @param {string} email - User email (used as a salt).
+ * @param {string} password - Plaintext password.
+ * @returns {Promise<string>} Hex-encoded hash string.
+ */
 async function hashDemoPassword(email, password) {
   const value = `${normalizeEmail(email)}:${String(password || "")}`;
   if (window.crypto?.subtle) {
@@ -60,22 +146,35 @@ async function hashDemoPassword(email, password) {
   }
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+    hash = (hash * HASH_MULTIPLIER + value.charCodeAt(index)) >>> 0;
   }
   return `fallback-${hash.toString(16)}`;
 }
 
+/**
+ * Reads the map of demo accounts from localStorage.
+ * @returns {Object<string, Object>} Account map keyed by normalised email.
+ */
 function readDemoAccounts() {
   return readJson(STORAGE_KEYS.demoAccounts, {});
 }
 
+/**
+ * Persists the demo accounts map to localStorage.
+ * @param {Object<string, Object>} accounts - Account map to save.
+ */
 function writeDemoAccounts(accounts) {
   writeJson(STORAGE_KEYS.demoAccounts, accounts);
 }
 
+/**
+ * Creates a sanitised snapshot of a demo profile with guaranteed field types.
+ * @param {Object} profile - Raw profile data.
+ * @returns {Object} Clean profile snapshot.
+ */
 function demoProfileSnapshot(profile) {
   return {
-    displayName: profile.displayName || "EcoTracer",
+    displayName: profile.displayName || DEFAULT_DISPLAY_NAME,
     email: normalizeEmail(profile.email),
     photoURL: profile.photoURL || "",
     greenPoints: Number(profile.greenPoints || 0),
@@ -89,6 +188,12 @@ function demoProfileSnapshot(profile) {
   };
 }
 
+/**
+ * Creates a fresh demo-mode account profile with zeroed stats.
+ * @param {string} email - The account email.
+ * @param {string} displayName - The account display name.
+ * @returns {Object} New profile snapshot.
+ */
 function createDemoAccountProfile(email, displayName) {
   return demoProfileSnapshot({
     displayName,
@@ -105,6 +210,11 @@ function createDemoAccountProfile(email, displayName) {
   });
 }
 
+/**
+ * Prepends an activity log entry to local storage (demo mode).
+ * @param {string} message - Human-readable activity description.
+ * @param {string} [type="info"] - Activity type tag (e.g. "auth", "points").
+ */
 function addActivity(message, type = "info") {
   const activities = readJson(STORAGE_KEYS.activities, []);
   activities.unshift({
@@ -113,9 +223,13 @@ function addActivity(message, type = "info") {
     type,
     createdAt: new Date().toISOString(),
   });
-  writeJson(STORAGE_KEYS.activities, activities.slice(0, 20));
+  writeJson(STORAGE_KEYS.activities, activities.slice(0, MAX_ACTIVITY_ENTRIES));
 }
 
+/**
+ * Retrieves (or initialises) the current demo-mode profile from localStorage.
+ * @returns {Object} The demo user profile with `isDemo: true`.
+ */
 function getDemoProfile() {
   const stored = readJson(STORAGE_KEYS.profile, null);
   if (stored) return { ...DEFAULT_PROFILE, ...stored, isDemo: true };
@@ -123,6 +237,12 @@ function getDemoProfile() {
   return { ...DEFAULT_PROFILE };
 }
 
+/**
+ * Merges updates into the demo profile and persists to localStorage.
+ * Also updates the matching demo-account record if one exists.
+ * @param {Object} nextProfile - Partial profile fields to merge.
+ * @returns {Object} The merged and persisted profile.
+ */
 function saveDemoProfile(nextProfile) {
   const profile = { ...getDemoProfile(), ...nextProfile, uid: DEMO_UID, isDemo: true };
   writeJson(STORAGE_KEYS.profile, profile);
@@ -141,16 +261,31 @@ function saveDemoProfile(nextProfile) {
   return profile;
 }
 
+/**
+ * Deletes every document in a Firestore query snapshot.
+ * @param {Object} dbMod - The Firestore module.
+ * @param {Object} querySnapshot - The snapshot whose docs should be deleted.
+ * @returns {Promise<void>}
+ */
 async function deleteQuerySnapshot(dbMod, querySnapshot) {
   await Promise.all(querySnapshot.docs.map((docSnap) => dbMod.deleteDoc(docSnap.ref)));
 }
 
+/**
+ * Returns an ISO date string for `index` months before the current date.
+ * @param {number} index - Number of months to subtract.
+ * @returns {string} ISO 8601 date string.
+ */
 function monthAgo(index) {
   const date = new Date();
   date.setMonth(date.getMonth() - index);
   return date.toISOString();
 }
 
+/**
+ * Generates six seed footprint records spanning the last five months.
+ * @returns {Array<Object>} Array of footprint record objects.
+ */
 function seedFootprints() {
   return [
     {
@@ -198,6 +333,10 @@ function seedFootprints() {
   ];
 }
 
+/**
+ * Reads footprints from localStorage, seeding defaults on first access.
+ * @returns {Array<Object>} Array of footprint records.
+ */
 function getLocalFootprints() {
   const existing = readJson(STORAGE_KEYS.footprints, null);
   if (existing && existing.length) return existing;
@@ -206,11 +345,16 @@ function getLocalFootprints() {
   return seeded;
 }
 
+/**
+ * Converts a Firebase Auth `User` object into a plain serialisable object.
+ * @param {Object|null} user - Firebase Auth user (or null).
+ * @returns {Object|null} Serialised user or null.
+ */
 function serializeFirebaseUser(user) {
   return user
     ? {
         uid: user.uid,
-        displayName: user.displayName || "EcoTracer",
+        displayName: user.displayName || DEFAULT_DISPLAY_NAME,
         email: user.email || "",
         photoURL: user.photoURL || "",
         isDemo: false,
@@ -218,6 +362,11 @@ function serializeFirebaseUser(user) {
     : null;
 }
 
+/**
+ * Lazily initialises the Firebase SDK (app, auth, firestore) and caches
+ * the runtime. Returns `null` when Firebase is not configured.
+ * @returns {Promise<Object|null>} The cached Firebase runtime or null.
+ */
 async function initFirebase() {
   if (!hasFirebaseConfig()) return null;
   if (firebaseRuntime) return firebaseRuntime;
@@ -239,6 +388,12 @@ async function initFirebase() {
   return firebasePromise;
 }
 
+/**
+ * Ensures a Firestore `users/{uid}` document and matching
+ * `publicProfiles/{uid}` document exist for the given user.
+ * @param {Object} user - Serialised user object with at least `uid`.
+ * @returns {Promise<Object|null>} The Firestore document reference, or null.
+ */
 async function ensureUserDocument(user) {
   const runtime = await initFirebase();
   if (!runtime || !user) return null;
@@ -249,7 +404,7 @@ async function ensureUserDocument(user) {
     await dbMod.setDoc(
       userRef,
       {
-        displayName: user.displayName || "EcoTracer",
+        displayName: user.displayName || DEFAULT_DISPLAY_NAME,
         email: user.email || "",
         photoURL: user.photoURL || "",
         greenPoints: 0,
@@ -273,12 +428,12 @@ async function ensureUserDocument(user) {
     publicRef,
     publicSnap.exists()
       ? {
-          displayName: user.displayName || publicSnap.data().displayName || "EcoTracer",
+          displayName: user.displayName || publicSnap.data().displayName || DEFAULT_DISPLAY_NAME,
           photoURL: user.photoURL || publicSnap.data().photoURL || "",
           updatedAt: dbMod.serverTimestamp(),
         }
       : {
-          displayName: user.displayName || "EcoTracer",
+          displayName: user.displayName || DEFAULT_DISPLAY_NAME,
           photoURL: user.photoURL || "",
           greenPoints: privateScore,
           updatedAt: dbMod.serverTimestamp(),
@@ -288,6 +443,12 @@ async function ensureUserDocument(user) {
   return userRef;
 }
 
+/**
+ * Fetches the full user profile from Firestore, falling back to demo
+ * profile when Firebase is unavailable.
+ * @param {Object} user - Serialised user object.
+ * @returns {Promise<Object>} Merged profile data.
+ */
 async function getRemoteProfile(user) {
   const runtime = await initFirebase();
   if (!runtime || !user) return getDemoProfile();
@@ -301,10 +462,20 @@ async function getRemoteProfile(user) {
 }
 
 export const ecoService = {
+  /**
+   * Checks whether Firebase is fully configured.
+   * @returns {Promise<boolean>} `true` if Firebase credentials are present.
+   */
   async isConfigured() {
     return hasFirebaseConfig();
   },
 
+  /**
+   * Subscribes to authentication state changes.
+   * In demo mode the callback is invoked immediately with the demo profile.
+   * @param {Function} callback - Called with the serialised user or demo profile.
+   * @returns {Promise<Function>} Unsubscribe function.
+   */
   async onAuthState(callback) {
     const runtime = await initFirebase();
     if (!runtime) {
@@ -317,12 +488,21 @@ export const ecoService = {
     });
   },
 
+  /**
+   * Returns the currently authenticated user or the demo profile.
+   * @returns {Promise<Object>} The current user profile.
+   */
   async getCurrentUser() {
     const runtime = await initFirebase();
     if (!runtime) return getDemoProfile();
     return serializeFirebaseUser(runtime.auth.currentUser);
   },
 
+  /**
+   * Initiates Google sign-in via popup.
+   * @returns {Promise<Object>} The signed-in user profile.
+   * @throws {Error} If Firebase is not configured.
+   */
   async signInWithGoogle() {
     const runtime = await initFirebase();
     if (!runtime) {
@@ -337,6 +517,14 @@ export const ecoService = {
     return user;
   },
 
+  /**
+   * Signs in with email and password. Uses demo-mode local accounts
+   * when Firebase is not configured.
+   * @param {string} email - User email.
+   * @param {string} password - User password.
+   * @returns {Promise<Object>} The signed-in user profile.
+   * @throws {Error} If credentials are invalid.
+   */
   async signInWithEmail(email, password) {
     const runtime = await initFirebase();
     if (!runtime) {
@@ -359,7 +547,16 @@ export const ecoService = {
     return user;
   },
 
-  async createEmailAccount(email, password, displayName = "EcoTracer") {
+  /**
+   * Creates a new email/password account. Falls back to local demo-mode
+   * storage when Firebase is unavailable.
+   * @param {string} email - New account email.
+   * @param {string} password - New account password.
+   * @param {string} [displayName="EcoTracer"] - Initial display name.
+   * @returns {Promise<Object>} The newly created user profile.
+   * @throws {Error} If the email is already registered.
+   */
+  async createEmailAccount(email, password, displayName = DEFAULT_DISPLAY_NAME) {
     const runtime = await initFirebase();
     if (!runtime) {
       const accountKey = normalizeEmail(email);
@@ -389,6 +586,10 @@ export const ecoService = {
     return user;
   },
 
+  /**
+   * Signs the user out. In demo mode, resets the profile to defaults.
+   * @returns {Promise<void>}
+   */
   async signOut() {
     const runtime = await initFirebase();
     if (!runtime) {
@@ -399,16 +600,33 @@ export const ecoService = {
     await runtime.authMod.signOut(runtime.auth);
   },
 
+  /**
+   * Sends a password-reset email via Firebase Auth.
+   * Throws in demo mode since emails cannot be sent locally.
+   * @param {string} email - The email to send the reset link to.
+   * @returns {Promise<void>}
+   * @throws {Error} In demo mode or on Firebase Auth errors.
+   */
   async sendPasswordReset(email) {
     const runtime = await initFirebase();
     if (!runtime) {
-      throw createAuthError("auth/demo-mode", "You're in demo mode — accounts are stored locally in your browser. Password reset emails cannot be sent. Try signing in with the password you used to create the account, or create a new account.");
+      throw createAuthError(
+        "auth/demo-mode",
+        "You're in demo mode — accounts are stored locally in your browser. "
+          + "Password reset emails cannot be sent. Try signing in with the password "
+          + "you used to create the account, or create a new account.",
+      );
     }
     try {
       await runtime.authMod.sendPasswordResetEmail(runtime.auth, email);
     } catch (err) {
       if (err.code === "auth/user-not-found") {
-        throw createAuthError("auth/user-not-found", "This email is not registered in Firebase. If you created your account while offline or in demo mode, it only exists locally. Please create a new account.");
+        throw createAuthError(
+          "auth/user-not-found",
+          "This email is not registered in Firebase. If you created your account "
+            + "while offline or in demo mode, it only exists locally. "
+            + "Please create a new account.",
+        );
       }
       if (err.code === "auth/invalid-email") {
         throw createAuthError("auth/invalid-email", "Please enter a valid email address.");
@@ -421,15 +639,27 @@ export const ecoService = {
     }
   },
 
+  /**
+   * Retrieves the full profile for a user (Firestore or demo).
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @returns {Promise<Object>} The user profile.
+   */
   async getProfile(user) {
     if (!user || user.isDemo) return getDemoProfile();
     return getRemoteProfile(user);
   },
 
+  /**
+   * Updates display name and photo URL for the given user.
+   * Applies length limits and persists to Firestore or demo storage.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {Object} updates - Object with `displayName` and/or `photoURL`.
+   * @returns {Promise<Object>} The updated profile.
+   */
   async updateUserProfile(user, updates) {
     const cleanUpdates = {
-      displayName: String(updates.displayName || "").trim().slice(0, 80),
-      photoURL: String(updates.photoURL || "").trim().slice(0, 400),
+      displayName: String(updates.displayName || "").trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
+      photoURL: String(updates.photoURL || "").trim().slice(0, MAX_PHOTO_URL_LENGTH),
     };
     if (!user || user.isDemo) {
       const profile = saveDemoProfile(cleanUpdates);
@@ -458,6 +688,12 @@ export const ecoService = {
     return { ...user, ...cleanUpdates };
   },
 
+  /**
+   * Permanently deletes a user account including all footprints,
+   * activities, and public profile data.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @returns {Promise<void>}
+   */
   async deleteAccount(user) {
     const runtime = await initFirebase();
     if (!runtime || !user || user.isDemo) {
@@ -484,6 +720,13 @@ export const ecoService = {
     if (runtime.auth.currentUser) await runtime.authMod.deleteUser(runtime.auth.currentUser);
   },
 
+  /**
+   * Saves a carbon-footprint calculation result for the user.
+   * In demo mode the record is persisted to localStorage.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {Object} result - Footprint result with `totalKg` and `breakdown`.
+   * @returns {Promise<Object>} The saved footprint record (with `id`).
+   */
   async saveFootprint(user, result) {
     const record = {
       ...result,
@@ -496,7 +739,7 @@ export const ecoService = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         ...record,
       };
-      writeJson(STORAGE_KEYS.footprints, [saved, ...footprints].slice(0, 24));
+      writeJson(STORAGE_KEYS.footprints, [saved, ...footprints].slice(0, MAX_FOOTPRINT_RECORDS));
       const previous = footprints[0]?.totalKg || saved.totalKg;
       const savedKg = Math.max(0, previous - saved.totalKg);
       const profile = getDemoProfile();
@@ -526,6 +769,11 @@ export const ecoService = {
     return { id: footprintRef.id, ...record };
   },
 
+  /**
+   * Retrieves up to {@link MAX_FOOTPRINT_RECORDS} footprint records for the user.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @returns {Promise<Array<Object>>} Array of footprint records, newest first.
+   */
   async getFootprints(user) {
     if (!user || user.isDemo) return getLocalFootprints();
     const runtime = await initFirebase();
@@ -533,7 +781,7 @@ export const ecoService = {
     const footprintsQuery = dbMod.query(
       dbMod.collection(db, "users", user.uid, "footprints"),
       dbMod.orderBy("createdAt", "desc"),
-      dbMod.limit(24),
+      dbMod.limit(MAX_FOOTPRINT_RECORDS),
     );
     const snap = await dbMod.getDocs(footprintsQuery);
     const records = snap.docs.map((docSnap) => {
@@ -547,6 +795,11 @@ export const ecoService = {
     return records.length ? records : getLocalFootprints();
   },
 
+  /**
+   * Retrieves recent activity entries for the user.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @returns {Promise<Array<Object>>} Array of activity objects, newest first.
+   */
   async getActivities(user) {
     if (!user || user.isDemo) return readJson(STORAGE_KEYS.activities, []);
     const runtime = await initFirebase();
@@ -554,7 +807,7 @@ export const ecoService = {
     const activityQuery = dbMod.query(
       dbMod.collection(db, "users", user.uid, "activities"),
       dbMod.orderBy("createdAt", "desc"),
-      dbMod.limit(12),
+      dbMod.limit(ACTIVITY_QUERY_LIMIT),
     );
     const snap = await dbMod.getDocs(activityQuery);
     return snap.docs.map((docSnap) => {
@@ -567,6 +820,16 @@ export const ecoService = {
     });
   },
 
+  /**
+   * Awards green points to a user, optionally guarded by a unique
+   * field/id pair to prevent duplicate awards.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {number} points - Number of points to add (may be negative).
+   * @param {string} [message] - Activity log message.
+   * @param {string} [uniqueField] - Profile array field for dedup (e.g. "completedTips").
+   * @param {string} [uniqueId] - Unique identifier within that field.
+   * @returns {Promise<{awarded: boolean, profile: Object}>}
+   */
   async addGreenPoints(user, points, message, uniqueField, uniqueId) {
     const amount = Number(points) || 0;
     if (!user || user.isDemo) {
@@ -608,7 +871,7 @@ export const ecoService = {
     await dbMod.setDoc(
       dbMod.doc(db, "publicProfiles", user.uid),
       {
-        displayName: nextProfile.displayName || user.displayName || "EcoTracer",
+        displayName: nextProfile.displayName || user.displayName || DEFAULT_DISPLAY_NAME,
         photoURL: nextProfile.photoURL || user.photoURL || "",
         greenPoints: Number(nextProfile.greenPoints || 0),
         updatedAt: dbMod.serverTimestamp(),
@@ -618,6 +881,13 @@ export const ecoService = {
     return { awarded: true, profile: nextProfile };
   },
 
+  /**
+   * Accepts a challenge for the user, awards its points, and increments
+   * the `challengesCompleted` counter.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {Object} challenge - Challenge object with `id`, `title`, `points`.
+   * @returns {Promise<{awarded: boolean, profile: Object}>}
+   */
   async acceptChallenge(user, challenge) {
     const result = await this.addGreenPoints(
       user,
@@ -642,26 +912,44 @@ export const ecoService = {
     return result;
   },
 
+  /**
+   * Marks a tip as completed and awards {@link TIP_COMPLETION_POINTS} points.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {Object} tip - Tip object with `id` and `title`.
+   * @returns {Promise<{awarded: boolean, profile: Object}>}
+   */
   async completeTip(user, tip) {
     return this.addGreenPoints(
       user,
-      10,
-      `Completed tip: ${tip.title} (+10 Green Points).`,
+      TIP_COMPLETION_POINTS,
+      `Completed tip: ${tip.title} (+${TIP_COMPLETION_POINTS} Green Points).`,
       "completedTips",
       tip.id || tip.title,
     );
   },
 
+  /**
+   * Marks an article as read and awards {@link ARTICLE_READ_POINTS} points.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @param {Object} article - Article object with `id` or `url`, and `title`.
+   * @returns {Promise<{awarded: boolean, profile: Object}>}
+   */
   async markArticleRead(user, article) {
     return this.addGreenPoints(
       user,
-      5,
-      `Read article: ${article.title} (+5 Green Points).`,
+      ARTICLE_READ_POINTS,
+      `Read article: ${article.title} (+${ARTICLE_READ_POINTS} Green Points).`,
       "readArticles",
       article.id || article.url,
     );
   },
 
+  /**
+   * Retrieves the top-{@link LEADERBOARD_LIMIT} leaderboard, sorted by
+   * green points descending. Returns demo data when offline.
+   * @param {Object|null} user - Serialised user, or null/demo.
+   * @returns {Promise<Array<Object>>} Leaderboard entries.
+   */
   async getLeaderboard(user) {
     if (!user || user.isDemo) {
       const profile = getDemoProfile();
@@ -683,7 +971,7 @@ export const ecoService = {
     const leaderboardQuery = dbMod.query(
       dbMod.collection(db, "publicProfiles"),
       dbMod.orderBy("greenPoints", "desc"),
-      dbMod.limit(10),
+      dbMod.limit(LEADERBOARD_LIMIT),
     );
     const snap = await dbMod.getDocs(leaderboardQuery);
     return snap.docs.map((docSnap) => docSnap.data());

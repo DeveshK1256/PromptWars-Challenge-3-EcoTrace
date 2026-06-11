@@ -1,6 +1,60 @@
-import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-32";
-import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-32";
-import { setButtonBusy, showToast } from "./app.js?v=firebase-config-32";
+/**
+ * @module map
+ * @description Interactive green-spots map page for EcoTrace. Handles Google
+ * Maps initialisation, Places API search, geocoding (Google + OpenStreetMap
+ * fallback), category filtering, and a comprehensive fallback dataset when
+ * API keys are unavailable.
+ */
+import { ECO_CONFIG, hasMapsConfig } from "./config.js?v=firebase-config-33";
+import { MAP_FALLBACK_SPOTS } from "./data.js?v=firebase-config-33";
+import { setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+
+/* ── Magic-number constants ─────────────────────────────────────── */
+
+/** Default map centre latitude (New Delhi). */
+const DEFAULT_LAT = 28.6139;
+
+/** Default map centre longitude (New Delhi). */
+const DEFAULT_LNG = 77.209;
+
+/** Mean radius of the Earth in kilometres (for Haversine formula). */
+const EARTH_RADIUS_KM = 6371;
+
+/** Search radius in metres for `nearbySearch` (Places API). */
+const NEARBY_SEARCH_RADIUS_M = 7000;
+
+/** Search radius in metres for `textSearch` (Places API). */
+const TEXT_SEARCH_RADIUS_M = 10000;
+
+/** Maximum results returned by a nearbySearch per category. */
+const NEARBY_RESULTS_LIMIT = 5;
+
+/** Maximum results returned by a textSearch. */
+const TEXT_SEARCH_RESULTS_LIMIT = 8;
+
+/** Zoom level used when the map focuses on a single spot. */
+const SINGLE_SPOT_ZOOM = 14;
+
+/** Default zoom level for the initial map render. */
+const DEFAULT_MAP_ZOOM = 13;
+
+/** Padding in pixels applied when fitting bounds around multiple spots. */
+const FIT_BOUNDS_PADDING_PX = 64;
+
+/** Number of top-ranked countries that receive special styling. */
+const TOP_RANK_COUNT = 3;
+
+/** Geolocation API timeout in milliseconds. */
+const GEOLOCATION_TIMEOUT_MS = 9000;
+
+/** Geolocation API maximum cached position age in milliseconds. */
+const GEOLOCATION_MAX_AGE_MS = 60000;
+
+/** Scale factor for the user-location marker circle. */
+const USER_MARKER_SCALE = 8;
+
+/** Stroke weight for the user-location marker border. */
+const USER_MARKER_STROKE_WEIGHT = 3;
 
 const CATEGORY_META = {
   ev: { label: "EV Charging", icon: "🔌", keyword: "EV charging station" },
@@ -66,31 +120,47 @@ const filters = [...document.querySelectorAll("[data-map-filter]")];
 let map;
 let infoWindow;
 let userMarker;
-let userPosition = { lat: 28.6139, lng: 77.209 };
+let userPosition = { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
 let activeCategories = new Set(Object.keys(CATEGORY_META));
 let renderedSpots = [];
 let markers = [];
 
+/**
+ * Updates the map status text element.
+ * @param {string} message - Status text to display.
+ */
 function setStatus(message) {
   if (statusNode) statusNode.textContent = message;
 }
 
+/**
+ * Calculates the great-circle distance between two lat/lng points using the
+ * Haversine formula.
+ * @param {{ lat: number, lng: number }} a - First coordinate.
+ * @param {{ lat: number, lng: number }} b - Second coordinate.
+ * @returns {number} Distance in kilometres.
+ */
 function distanceKm(a, b) {
-  const radius = 6371;
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
   const lat1 = (a.lat * Math.PI) / 180;
   const lat2 = (b.lat * Math.PI) / 180;
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return radius * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+/**
+ * Dynamically loads the Google Maps JavaScript SDK if not already present.
+ * @returns {Promise<void>} Resolves when the SDK is available.
+ */
 function loadMapsScript() {
   if (window.google?.maps) return Promise.resolve();
   const key = ECO_CONFIG.google.mapsApiKey || ECO_CONFIG.google.placesApiKey;
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&v=weekly`;
+    script.src =
+      `https://maps.googleapis.com/maps/api/js` +
+      `?key=${encodeURIComponent(key)}&libraries=places&v=weekly`;
     script.async = true;
     script.defer = true;
     script.onload = resolve;
@@ -99,27 +169,48 @@ function loadMapsScript() {
   });
 }
 
+/**
+ * Generates demo green-spot data centred around the given coordinate.
+ * @param {{ lat: number, lng: number }} [center=userPosition] - Origin point.
+ * @returns {object[]} Array of spot objects with computed `lat`, `lng` and `distanceKm`.
+ */
 function fallbackSpots(center = userPosition) {
   return MAP_FALLBACK_SPOTS.map((spot) => ({
     ...spot,
     lat: center.lat + spot.latOffset,
     lng: center.lng + spot.lngOffset,
-    distanceKm: distanceKm(center, { lat: center.lat + spot.latOffset, lng: center.lng + spot.lngOffset }),
+    distanceKm: distanceKm(center, {
+      lat: center.lat + spot.latOffset,
+      lng: center.lng + spot.lngOffset,
+    }),
   }));
 }
 
+/**
+ * Synchronises the `aria-pressed` state of every category filter button
+ * with the current `activeCategories` set.
+ */
 function updateFilterButtons() {
   filters.forEach((filter) => {
     filter.setAttribute("aria-pressed", String(activeCategories.has(filter.dataset.mapFilter)));
   });
 }
 
+/**
+ * Sets the active category filter. "all" enables every category.
+ * @param {string} category - Category key or "all".
+ */
 function setActiveCategory(category) {
   activeCategories = category === "all" ? new Set(Object.keys(CATEGORY_META)) : new Set([category]);
   updateFilterButtons();
   syncMarkerVisibility();
 }
 
+/**
+ * Guesses the most relevant green-spot category from free-text input.
+ * @param {string} [text=""] - User query or place name.
+ * @returns {string} A category key ("ev", "recycling", "trees", or "organic").
+ */
 function inferCategoryFromText(text = "") {
   const value = text.toLowerCase();
   if (value.includes("ev") || value.includes("charg")) return "ev";
@@ -129,23 +220,47 @@ function inferCategoryFromText(text = "") {
   return "trees";
 }
 
+/**
+ * Normalises a query string for dictionary look-up by lowering case and
+ * collapsing non-alphanumeric characters to single spaces.
+ * @param {string} [query=""] - Raw search input.
+ * @returns {string} Cleaned key string.
+ */
 function normalizePlaceKey(query = "") {
   return query.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Determines whether a search query contains eco/green-service keywords.
+ * @param {string} [query=""] - User search input.
+ * @returns {boolean} `true` if the query has green intent.
+ */
 function hasGreenIntent(query = "") {
   const value = normalizePlaceKey(query);
   return GREEN_QUERY_TERMS.some((term) => value.includes(term));
 }
 
+/**
+ * Looks up a hard-coded lat/lng for well-known city or country names.
+ * @param {string} [query=""] - Location search string.
+ * @returns {{ lat: number, lng: number, label: string }|null} Matching fallback or null.
+ */
 function getLocationFallback(query = "") {
   const normalized = normalizePlaceKey(query);
   if (!normalized) return null;
   if (LOCATION_FALLBACKS[normalized]) return LOCATION_FALLBACKS[normalized];
-  const matchingKey = Object.keys(LOCATION_FALLBACKS).find((key) => normalized.includes(key) || key.includes(normalized));
+  const matchingKey = Object.keys(LOCATION_FALLBACKS).find(
+    (key) => normalized.includes(key) || key.includes(normalized),
+  );
   return matchingKey ? LOCATION_FALLBACKS[matchingKey] : null;
 }
 
+/**
+ * Strips common eco/green service words from a query to isolate the
+ * location portion (e.g. "EV charging near Mumbai" → "Mumbai").
+ * @param {string} [query=""] - Raw user search string.
+ * @returns {string} The query with service keywords removed.
+ */
 function stripGreenServiceWords(query = "") {
   return query
     .replace(
@@ -156,6 +271,9 @@ function stripGreenServiceWords(query = "") {
     .trim();
 }
 
+/**
+ * Renders the sidebar list of visible green spots, filtered by active categories.
+ */
 function renderList() {
   if (!listNode) return;
   listNode.replaceChildren();
@@ -190,6 +308,10 @@ function renderList() {
   });
 }
 
+/**
+ * Shows or hides map markers based on the current `activeCategories` set,
+ * then refreshes the sidebar list.
+ */
 function syncMarkerVisibility() {
   markers.forEach(({ marker, category }) => {
     marker.setMap(map && activeCategories.has(category) ? map : null);
@@ -197,11 +319,19 @@ function syncMarkerVisibility() {
   renderList();
 }
 
+/**
+ * Removes all green-spot markers from the map and empties the array.
+ */
 function clearSpotMarkers() {
   markers.forEach(({ marker }) => marker.setMap(null));
   markers = [];
 }
 
+/**
+ * Creates a Google Maps marker for a single green spot and registers a
+ * click handler that opens an info-window.
+ * @param {object} spot - The green-spot data object.
+ */
 function addMarker(spot) {
   if (!map || !window.google?.maps) return;
   const marker = new google.maps.Marker({
@@ -212,25 +342,37 @@ function addMarker(spot) {
   });
   marker.addListener("click", () => {
     infoWindow.setContent(
-      `<strong>${spot.name}</strong><br>${spot.address || "Address unavailable"}<br>${spot.distanceKm.toFixed(1)} km away`,
+      `<strong>${spot.name}</strong><br>` +
+      `${spot.address || "Address unavailable"}<br>` +
+      `${spot.distanceKm.toFixed(1)} km away`,
     );
     infoWindow.open({ map, anchor: marker });
   });
   markers.push({ marker, category: spot.category });
 }
 
+/**
+ * Adjusts the map viewport to contain all provided spots.
+ * @param {object[]} spots - Array of spot objects with `lat` and `lng`.
+ */
 function fitMapToSpots(spots) {
   if (!map || !window.google?.maps || !spots.length) return;
   if (spots.length === 1) {
     map.setCenter({ lat: spots[0].lat, lng: spots[0].lng });
-    map.setZoom(14);
+    map.setZoom(SINGLE_SPOT_ZOOM);
     return;
   }
   const bounds = new google.maps.LatLngBounds();
   spots.forEach((spot) => bounds.extend({ lat: spot.lat, lng: spot.lng }));
-  map.fitBounds(bounds, 64);
+  map.fitBounds(bounds, FIT_BOUNDS_PADDING_PX);
 }
 
+/**
+ * Replaces the current map spots with a new set, sorts by distance, adds
+ * markers, fits the viewport, and updates the status text.
+ * @param {object[]} spots      - New spot data.
+ * @param {string}   statusText - Status message to display.
+ */
 function renderSpotResults(spots, statusText) {
   clearSpotMarkers();
   renderedSpots = spots.sort((a, b) => a.distanceKm - b.distanceKm);
@@ -240,6 +382,13 @@ function renderSpotResults(spots, statusText) {
   setStatus(statusText);
 }
 
+/**
+ * Fetches nearby places for a single category via the Google Places API,
+ * falling back to demo data when the API is unavailable.
+ * @param {string} category                    - Category key (e.g. "ev").
+ * @param {{ lat: number, lng: number }} center - Search origin.
+ * @returns {Promise<object[]>} Array of spot objects.
+ */
 async function fetchPlacesForCategory(category, center) {
   if (!window.google?.maps?.places || category === "trees") {
     return fallbackSpots(center).filter((spot) => spot.category === category);
@@ -247,30 +396,38 @@ async function fetchPlacesForCategory(category, center) {
   const service = new google.maps.places.PlacesService(map);
   const keyword = CATEGORY_META[category].keyword;
   return new Promise((resolve) => {
-    service.nearbySearch({ location: center, radius: 7000, keyword }, (results, status) => {
-      if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) {
-        resolve(fallbackSpots(center).filter((spot) => spot.category === category));
-        return;
-      }
-      resolve(
-        results.slice(0, 5).map((place) => {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          return {
-            id: place.place_id,
-            category,
-            name: place.name,
-            address: place.vicinity || "Address available on Google Maps",
-            lat,
-            lng,
-            distanceKm: distanceKm(center, { lat, lng }),
-          };
-        }),
-      );
-    });
+    service.nearbySearch(
+      { location: center, radius: NEARBY_SEARCH_RADIUS_M, keyword },
+      (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) {
+          resolve(fallbackSpots(center).filter((spot) => spot.category === category));
+          return;
+        }
+        resolve(
+          results.slice(0, NEARBY_RESULTS_LIMIT).map((place) => {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            return {
+              id: place.place_id,
+              category,
+              name: place.name,
+              address: place.vicinity || "Address available on Google Maps",
+              lat,
+              lng,
+              distanceKm: distanceKm(center, { lat, lng }),
+            };
+          }),
+        );
+      },
+    );
   });
 }
 
+/**
+ * Geocodes an address string using the Google Maps Geocoder (client-side).
+ * @param {string} query - Address or place name to geocode.
+ * @returns {Promise<{ lat: number, lng: number, label: string }|null>}
+ */
 function geocodeAddress(query) {
   if (!window.google?.maps?.Geocoder || !query) return Promise.resolve(null);
   const geocoder = new google.maps.Geocoder();
@@ -290,12 +447,19 @@ function geocodeAddress(query) {
   });
 }
 
+/**
+ * Geocodes an address using the Google Geocoding REST API (server-key path).
+ * @param {string} query - Address or place name to geocode.
+ * @returns {Promise<{ lat: number, lng: number, label: string }|null>}
+ */
 async function geocodeWithGoogleRest(query) {
   const key = ECO_CONFIG.google.mapsApiKey || ECO_CONFIG.google.placesApiKey;
   if (!key || !query) return null;
   const params = new URLSearchParams({ address: query, key });
   try {
-    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`);
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`,
+    );
     if (!response.ok) return null;
     const data = await response.json();
     const result = data.results?.[0];
@@ -310,6 +474,11 @@ async function geocodeWithGoogleRest(query) {
   }
 }
 
+/**
+ * Geocodes an address using the free OpenStreetMap Nominatim API.
+ * @param {string} query - Address or place name to geocode.
+ * @returns {Promise<{ lat: number, lng: number, label: string }|null>}
+ */
 async function geocodeWithOpenStreetMap(query) {
   if (!query) return null;
   const params = new URLSearchParams({
@@ -318,9 +487,10 @@ async function geocodeWithOpenStreetMap(query) {
     limit: "1",
   });
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-      headers: { Accept: "application/json" },
-    });
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      { headers: { Accept: "application/json" } },
+    );
     if (!response.ok) return null;
     const data = await response.json();
     const result = data?.[0];
@@ -335,6 +505,14 @@ async function geocodeWithOpenStreetMap(query) {
   }
 }
 
+/**
+ * Attempts to resolve a location from a query string using multiple
+ * geocoding strategies in cascade: Google Maps SDK → Google REST →
+ * OpenStreetMap → hard-coded fallback.
+ * @param {string} query                       - Original user query.
+ * @param {string} [cleanedLocationQuery=""]    - Query with green keywords stripped.
+ * @returns {Promise<{ lat: number, lng: number, label: string }|null>}
+ */
 async function resolveLocation(query, cleanedLocationQuery = "") {
   const candidates = [query, cleanedLocationQuery].map((item) => item?.trim()).filter(Boolean);
   for (const candidate of candidates) {
@@ -348,6 +526,13 @@ async function resolveLocation(query, cleanedLocationQuery = "") {
   return null;
 }
 
+/**
+ * Performs a Google Places text search for green spots matching the query.
+ * @param {string} query                        - Search text.
+ * @param {string} category                     - Category filter or "all".
+ * @param {{ lat: number, lng: number }} center  - Search origin.
+ * @returns {Promise<object[]>} Array of matching spot objects.
+ */
 function searchPlaces(query, category, center) {
   if (!window.google?.maps?.places || !map) return Promise.resolve([]);
   const selectedCategory = category === "all" ? inferCategoryFromText(query) : category;
@@ -357,31 +542,45 @@ function searchPlaces(query, category, center) {
       ? query
       : `${CATEGORY_META[selectedCategory].keyword} near ${query}`;
   return new Promise((resolve) => {
-    service.textSearch({ query: searchQuery, location: center, radius: 10000 }, (results, status) => {
-      if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) {
-        resolve([]);
-        return;
-      }
-      resolve(
-        results.slice(0, 8).map((place) => {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          const inferred = category === "all" ? inferCategoryFromText(`${place.name} ${place.types?.join(" ") || ""}`) : selectedCategory;
-          return {
-            id: place.place_id,
-            category: inferred,
-            name: place.name,
-            address: place.formatted_address || place.vicinity || "Address available on Google Maps",
-            lat,
-            lng,
-            distanceKm: distanceKm(center, { lat, lng }),
-          };
-        }),
-      );
-    });
+    service.textSearch(
+      { query: searchQuery, location: center, radius: TEXT_SEARCH_RADIUS_M },
+      (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) {
+          resolve([]);
+          return;
+        }
+        resolve(
+          results.slice(0, TEXT_SEARCH_RESULTS_LIMIT).map((place) => {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            const inferred = category === "all"
+              ? inferCategoryFromText(`${place.name} ${place.types?.join(" ") || ""}`)
+              : selectedCategory;
+            return {
+              id: place.place_id,
+              category: inferred,
+              name: place.name,
+              address: place.formatted_address || place.vicinity || "Address available on Google Maps",
+              lat,
+              lng,
+              distanceKm: distanceKm(center, { lat, lng }),
+            };
+          }),
+        );
+      },
+    );
   });
 }
 
+/**
+ * Searches the hard-coded fallback spots dataset when the Places API is
+ * unavailable. Treats queries without green intent as pure location look-ups.
+ * @param {string} query                        - User search string.
+ * @param {string} category                     - Category filter or "all".
+ * @param {{ lat: number, lng: number }} [center=userPosition] - Search origin.
+ * @param {{ treatAsLocation?: boolean }}  [options={}] - Extra flags.
+ * @returns {object[]} Matching fallback spots.
+ */
 function searchFallback(query, category, center = userPosition, options = {}) {
   const needle = query.toLowerCase();
   const shouldTreatAsLocation = options.treatAsLocation || (needle && !hasGreenIntent(needle));
@@ -394,6 +593,12 @@ function searchFallback(query, category, center = userPosition, options = {}) {
   return fallbackSpots(center).filter((spot) => category === "all" || spot.category === category);
 }
 
+/**
+ * Initialises (or re-initialises) the Google Map centred on the given
+ * coordinates, placing a user-marker and loading green spots for all
+ * categories.
+ * @param {{ lat: number, lng: number }} [center=userPosition] - Map centre.
+ */
 async function renderMap(center = userPosition) {
   userPosition = center;
   renderedSpots = [];
@@ -419,7 +624,7 @@ async function renderMap(center = userPosition) {
   if (mapNode) mapNode.textContent = "";
   map = new google.maps.Map(mapNode, {
     center,
-    zoom: 13,
+    zoom: DEFAULT_MAP_ZOOM,
     mapId: "ecotrace-action-map",
     streetViewControl: false,
     fullscreenControl: true,
@@ -435,14 +640,19 @@ async function renderMap(center = userPosition) {
       fillColor: "#2f7c64",
       fillOpacity: 1,
       strokeColor: "#ffffff",
-      strokeWeight: 3,
-      scale: 8,
+      strokeWeight: USER_MARKER_STROKE_WEIGHT,
+      scale: USER_MARKER_SCALE,
     },
   });
   const groups = await Promise.all(Object.keys(CATEGORY_META).map((category) => fetchPlacesForCategory(category, center)));
   renderSpotResults(groups.flat(), `Found ${groups.flat().length} green spots near you.`);
 }
 
+/**
+ * Prompts the user for their current geolocation via the browser API.
+ * @returns {Promise<{ lat: number, lng: number }>} The user's coordinates.
+ * @throws {Error} If geolocation is unavailable or the user denies access.
+ */
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -456,7 +666,11 @@ function getCurrentPosition() {
           lng: position.coords.longitude,
         }),
       reject,
-      { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 },
+      {
+        enableHighAccuracy: true,
+        timeout: GEOLOCATION_TIMEOUT_MS,
+        maximumAge: GEOLOCATION_MAX_AGE_MS,
+      },
     );
   });
 }
@@ -472,6 +686,13 @@ filters.forEach((button) => {
   });
 });
 
+/**
+ * Orchestrates a full map search: resolves the location, queries the
+ * Places API (or falls back to demo data), and updates the map + sidebar.
+ * @param {string}                query              - User search text.
+ * @param {string}                [category="all"]    - Category filter.
+ * @param {HTMLButtonElement|null} [submitter=null]   - Submit button (for busy state).
+ */
 async function runMapSearch(query, category = "all", submitter = null) {
   if (!query && category === "all") {
     showToast("Enter a place or choose a green spot category to search.", "error");
@@ -550,6 +771,10 @@ findButton?.addEventListener("click", async () => {
   }
 });
 
+/**
+ * Entry point for the map page — renders the default map, then checks URL
+ * query-parameters for an initial search to execute.
+ */
 async function initMapPage() {
   await renderMap(userPosition);
   const params = new URLSearchParams(window.location.search);

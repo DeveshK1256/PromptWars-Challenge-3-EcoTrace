@@ -1,7 +1,12 @@
-import { TIP_CATEGORIES } from "./data.js?v=firebase-config-32";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
-import { getPersonalizedTips } from "./gemini.js?v=firebase-config-32";
+/**
+ * @module tips
+ * Personalised eco-tips page powered by Gemini AI with category
+ * filtering, session caching, and tip-completion tracking.
+ */
+import { TIP_CATEGORIES } from "./data.js?v=firebase-config-33";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
+import { getPersonalizedTips } from "./gemini.js?v=firebase-config-33";
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");

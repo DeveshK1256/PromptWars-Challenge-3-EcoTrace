@@ -1,6 +1,11 @@
-import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-32";
-import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
+/**
+ * @module challenges
+ * Weekly eco-challenges, badge progression, and Green Points
+ * leaderboard with real-time Firestore or demo-mode fallback.
+ */
+import { BADGES, CHALLENGES } from "./data.js?v=firebase-config-33";
+import { appState, onUserReady, setButtonBusy, showToast } from "./app.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
 
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");

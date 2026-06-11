@@ -1,7 +1,46 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-32";
-import { ecoService } from "./firebase.js?v=firebase-config-32";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-32";
+/**
+ * @module app
+ * @description Core application bootstrap for EcoTrace. Provides shared state,
+ * utility helpers (formatting, toasts, UI), auth flow, navigation, a live
+ * global CO₂ counter, and country-emissions table rendering.
+ */
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-33";
+import { ecoService } from "./firebase.js?v=firebase-config-33";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-33";
 
+/* ── Magic-number constants ─────────────────────────────────────── */
+
+/** Kilograms in one metric tonne. */
+const KG_PER_TONNE = 1000;
+
+/** Threshold (in kg) above which tonnes are shown with 0 decimal places. */
+const LARGE_TONNE_THRESHOLD = 10000;
+
+/** Duration (ms) a toast notification stays visible before auto-removal. */
+const TOAST_DURATION_MS = 4600;
+
+/** Minimum acceptable password length for email sign-up. */
+const MIN_PASSWORD_LENGTH = 6;
+
+/** Estimated global CO₂ emissions per year in metric tonnes. */
+const YEARLY_GLOBAL_CO2_TONNES = 37_400_000_000;
+
+/** Interval (ms) between carbon-counter UI refreshes. */
+const COUNTER_INTERVAL_MS = 1000;
+
+/** Desktop breakpoint (px) at which the mobile nav auto-closes. */
+const DESKTOP_BREAKPOINT_PX = 1081;
+
+/** Delay (ms) before lazily loading the chatbot module. */
+const CHATBOT_LAZY_DELAY_MS = 2000;
+
+/** Number of seconds in a standard (non-leap) year. */
+const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+
+/**
+ * Shared application state holding the current user, profile, and auth readiness.
+ * @type {{ user: object|null, profile: object|null, authReady: boolean }}
+ */
 export const appState = {
   user: null,
   profile: null,
@@ -10,12 +49,24 @@ export const appState = {
 
 const userReadyHandlers = new Set();
 
+/**
+ * Formats a kilogram value for display, converting to tonnes when ≥ 1 000 kg.
+ * @param {number} value - The kilogram value to format.
+ * @returns {string} Formatted string like "1,234 kg" or "1.2T".
+ */
 export function formatKg(value) {
   const amount = Number(value) || 0;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(amount >= 10000 ? 0 : 1)}T`;
+  if (amount >= KG_PER_TONNE) {
+    return `${(amount / KG_PER_TONNE).toFixed(amount >= LARGE_TONNE_THRESHOLD ? 0 : 1)}T`;
+  }
   return `${Math.round(amount).toLocaleString()} kg`;
 }
 
+/**
+ * Formats a date value into a human-readable "dd MMM yyyy" string (en-IN locale).
+ * @param {string|number|Date|null} value - A value parseable by `new Date()`.
+ * @returns {string} Formatted date string, or "Not recorded" if falsy.
+ */
 export function formatDate(value) {
   if (!value) return "Not recorded";
   return new Intl.DateTimeFormat("en-IN", {
@@ -25,14 +76,31 @@ export function formatDate(value) {
   }).format(new Date(value));
 }
 
+/**
+ * Clamps a numeric value between a minimum and maximum (inclusive).
+ * @param {number} value - The value to clamp.
+ * @param {number} min   - Lower bound.
+ * @param {number} max   - Upper bound.
+ * @returns {number} The clamped value.
+ */
 export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * Returns the IDs of all badges the user has earned at the given point total.
+ * @param {number} [points=0] - The user's current green-point total.
+ * @returns {string[]} Array of earned badge IDs.
+ */
 export function getBadgeIds(points = 0) {
   return BADGES.filter((badge) => points >= badge.threshold).map((badge) => badge.id);
 }
 
+/**
+ * Displays a brief toast notification to the user.
+ * @param {string} message - Text to show inside the toast.
+ * @param {"success"|"error"} [tone="success"] - Visual tone / colour of the toast.
+ */
 export function showToast(message, tone = "success") {
   let region = document.querySelector("[data-toast-region]");
   if (!region) {
@@ -46,9 +114,16 @@ export function showToast(message, tone = "success") {
   toast.className = `toast toast-${tone}`;
   toast.textContent = message;
   region.append(toast);
-  window.setTimeout(() => toast.remove(), 4600);
+  window.setTimeout(() => toast.remove(), TOAST_DURATION_MS);
 }
 
+/**
+ * Toggles a button into or out of a "busy" (loading) state.
+ * While busy the button is disabled, shows a spinner-text, and sets `aria-busy`.
+ * @param {HTMLButtonElement|null} button  - The button element to modify.
+ * @param {boolean}                isBusy  - `true` to enter busy state, `false` to restore.
+ * @param {string}                 [busyText="Working..."] - Label shown while busy.
+ */
 export function setButtonBusy(button, isBusy, busyText = "Working...") {
   if (!button) return;
   if (isBusy) {
@@ -63,6 +138,13 @@ export function setButtonBusy(button, isBusy, busyText = "Working...") {
   }
 }
 
+/**
+ * Builds a stylised empty-state placeholder element.
+ * @param {string} title              - Heading text.
+ * @param {string} message            - Descriptive paragraph text.
+ * @param {string} [icon="fa-seedling"] - Font Awesome icon class suffix.
+ * @returns {HTMLDivElement} The assembled empty-state DOM node.
+ */
 export function buildEmptyState(title, message, icon = "fa-seedling") {
   const wrapper = document.createElement("div");
   wrapper.className = "empty-state";
@@ -77,17 +159,31 @@ export function buildEmptyState(title, message, icon = "fa-seedling") {
   return wrapper;
 }
 
+/**
+ * Registers a callback to run once authentication state is resolved.
+ * If auth is already ready, the handler fires immediately.
+ * @param {(user: object|null, profile: object|null) => void} handler - Callback receiving user & profile.
+ * @returns {() => boolean} Unsubscribe function that removes the handler.
+ */
 export function onUserReady(handler) {
   userReadyHandlers.add(handler);
   if (appState.authReady) handler(appState.user, appState.profile);
   return () => userReadyHandlers.delete(handler);
 }
 
+/**
+ * Extracts the filename portion of the current URL pathname.
+ * @returns {string} The current page filename, e.g. "dashboard.html".
+ */
 function getPageName() {
   const path = window.location.pathname.split("/").pop() || "index.html";
   return path;
 }
 
+/**
+ * Sets the `aria-current="page"` attribute on the nav link matching the
+ * current page, so CSS can highlight the active route.
+ */
 function markActiveNav() {
   const page = getPageName().toLowerCase();
   document.querySelectorAll("[data-nav-link]").forEach((link) => {
@@ -99,6 +195,10 @@ function markActiveNav() {
   });
 }
 
+/**
+ * Initialises the responsive mobile navigation: toggle button, backdrop
+ * dismiss, Escape-key close, and auto-close on desktop resize.
+ */
 function initNavigation() {
   const toggle = document.querySelector("[data-nav-toggle]");
   const menu = document.querySelector("[data-nav-menu]");
@@ -133,15 +233,18 @@ function initNavigation() {
   });
 
   window.addEventListener("resize", () => {
-    if (window.matchMedia("(min-width: 1081px)").matches) setMenuOpen(false);
+    if (window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT_PX}px)`).matches) setMenuOpen(false);
   });
 }
 
+/**
+ * Starts the live global CO₂ counter on the homepage hero section,
+ * estimating cumulative emissions since 1 January of the current year.
+ */
 function initCarbonCounter() {
   const counter = document.querySelector("[data-co2-counter]");
   if (!counter) return;
-  const yearlyTonnes = 37_400_000_000;
-  const tonnesPerSecond = yearlyTonnes / (365 * 24 * 60 * 60);
+  const tonnesPerSecond = YEARLY_GLOBAL_CO2_TONNES / SECONDS_PER_YEAR;
   const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime();
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -149,11 +252,15 @@ function initCarbonCounter() {
     const seconds = Math.max(0, (Date.now() - yearStart) / 1000);
     const total = Math.floor(seconds * tonnesPerSecond);
     counter.textContent = total.toLocaleString("en-IN");
-    if (!reducedMotion) window.setTimeout(render, 1000);
+    if (!reducedMotion) window.setTimeout(render, COUNTER_INTERVAL_MS);
   };
   render();
 }
 
+/**
+ * Renders the interactive country-emissions table with year-tab switching
+ * on the homepage Emissions section.
+ */
 function initCountryEmissions() {
   const tabsContainer = document.querySelector("[data-year-tabs]");
   const tableContainer = document.querySelector("[data-country-table]");
@@ -219,6 +326,12 @@ function initCountryEmissions() {
   renderTable();
 }
 
+/**
+ * Synchronises all DOM elements bound via `data-auth-*` attributes with the
+ * current user/profile data (display name, email, avatar, points).
+ * @param {object|null} user    - Firebase Auth user object.
+ * @param {object|null} profile - EcoTrace profile document.
+ */
 function updateAuthUI(user, profile) {
   const displayName = profile?.displayName || user?.displayName || "";
   const email = profile?.email || user?.email || "";
@@ -244,14 +357,28 @@ function updateAuthUI(user, profile) {
   document.documentElement.dataset.auth = user ? "signed-in" : "signed-out";
 }
 
+/**
+ * Redirects unauthenticated visitors away from pages marked
+ * with `data-auth-required`, saving the intended destination for
+ * post-login redirect.
+ * @param {object|null} user - The current Firebase Auth user (or null).
+ */
 function enforceAuthGuard(user) {
   if (!document.body.matches("[data-auth-required]")) return;
   if (!hasFirebaseConfig()) return;
   if (user) return;
-  sessionStorage.setItem("ecotrace.returnTo", window.location.pathname.split("/").pop() || "dashboard.html");
+  sessionStorage.setItem(
+    "ecotrace.returnTo",
+    window.location.pathname.split("/").pop() || "dashboard.html",
+  );
   window.location.href = "index.html?auth=required";
 }
 
+/**
+ * Subscribes to Firebase Auth state changes. On each change it refreshes
+ * `appState`, updates the UI, enforces auth-guards, and notifies all
+ * registered `onUserReady` handlers.
+ */
 async function initAuth() {
   await ecoService.onAuthState(async (user) => {
     appState.user = user;
@@ -263,9 +390,32 @@ async function initAuth() {
   });
 }
 
+/**
+ * Wires up all authentication-related DOM actions: Google sign-in buttons,
+ * email/password forms, sign-out buttons, password-visibility toggles,
+ * and "forgot password" links.
+ */
 function initAuthActions() {
-  const expectedAuthCodes = new Set(["auth/user-not-found", "auth/wrong-password", "auth/invalid-credential", "auth/email-already-in-use"]);
+  const expectedAuthCodes = new Set([
+    "auth/user-not-found",
+    "auth/wrong-password",
+    "auth/invalid-credential",
+    "auth/email-already-in-use",
+  ]);
+
+  /**
+   * Checks whether an auth error is one we have a user-friendly message for.
+   * @param {object} error - The Firebase Auth error.
+   * @returns {boolean} `true` if the error code is in the expected set.
+   */
   const isExpectedAuthError = (error) => expectedAuthCodes.has(error?.code);
+
+  /**
+   * Maps a Firebase Auth error to a human-readable toast message.
+   * @param {object} error         - The Firebase Auth error.
+   * @param {"signin"|"signup"} action - Which action triggered the error.
+   * @returns {string} A user-friendly error message.
+   */
   const getAuthErrorMessage = (error, action) => {
     const code = error?.code || "";
     if (code.includes("user-not-found")) return "No account exists for this email. Use Create account first.";
@@ -337,7 +487,7 @@ function initAuthActions() {
       const email = String(data.get("email") || "").trim();
       const password = String(data.get("password") || "");
       const displayName = String(data.get("displayName") || "").trim() || "EcoTracer";
-      if (!email || password.length < 6) {
+      if (!email || password.length < MIN_PASSWORD_LENGTH) {
         showToast("Use a valid email and a password with at least 6 characters.", "error");
         return;
       }
@@ -398,12 +548,19 @@ function initAuthActions() {
   });
 }
 
+/**
+ * Sets all `[data-current-year]` elements to the current four-digit year.
+ */
 function initFooterYear() {
   document.querySelectorAll("[data-current-year]").forEach((node) => {
     node.textContent = String(new Date().getFullYear());
   });
 }
 
+/**
+ * Hooks up the reduced-motion toggle buttons, adding/removing the
+ * `reduce-motion` class on `<html>` and announcing the change via toast.
+ */
 function initReducedMotionToggle() {
   document.querySelectorAll("[data-reduced-motion]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -430,9 +587,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-32").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-33").then((m) => m.initEcoBot()).catch(() => {});
   }
-  setTimeout(loadChatbot, 2000);
+  setTimeout(loadChatbot, CHATBOT_LAZY_DELAY_MS);
   document.addEventListener("click", loadChatbot, { once: true });
   document.addEventListener("keydown", loadChatbot, { once: true });
 

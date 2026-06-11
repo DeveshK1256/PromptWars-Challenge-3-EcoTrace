@@ -1,8 +1,25 @@
 /**
- * EcoBot — Gemini-powered AI chatbot for eco/sustainability questions.
- * Injects a floating chat widget into every page.
+ * @module chatbot
+ * @description EcoBot — Gemini-powered AI chatbot for eco/sustainability questions.
+ * Injects a floating chat widget into every page, provides suggested
+ * questions, and falls back to a local answer bank when the Gemini API
+ * is unavailable.
  */
-import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-32";
+import { ECO_CONFIG, hasGeminiConfig } from "./config.js?v=firebase-config-33";
+
+/* ── Magic-number constants ─────────────────────────────────────── */
+
+/** Gemini `temperature` parameter — controls response randomness. */
+const GEMINI_TEMPERATURE = 0.7;
+
+/** Maximum number of tokens Gemini may produce per response. */
+const GEMINI_MAX_OUTPUT_TOKENS = 300;
+
+/** Gemini `topP` nucleus-sampling parameter. */
+const GEMINI_TOP_P = 0.9;
+
+/** Delay (ms) before auto-focusing the chat input after opening the panel. */
+const FOCUS_DELAY_MS = 200;
 
 const BOT_NAME = "EcoBot";
 const MAX_HISTORY = 12;
@@ -35,6 +52,10 @@ let chatHistory = [];
 let isOpen = false;
 let isTyping = false;
 
+/**
+ * Builds the floating chat widget DOM (FAB button + slide-out panel),
+ * populates suggested-question chips, and wires up event listeners.
+ */
 function createChatWidget() {
   // ── Floating Button ──
   const fab = document.createElement("button");
@@ -110,6 +131,9 @@ function createChatWidget() {
   });
 }
 
+/**
+ * Toggles the chat panel open/closed and updates ARIA attributes on the FAB.
+ */
 function toggleChat() {
   isOpen = !isOpen;
   const panel = document.getElementById("ecobot-panel");
@@ -120,10 +144,15 @@ function toggleChat() {
 
   if (isOpen) {
     const input = document.getElementById("ecobot-input");
-    setTimeout(() => input?.focus(), 200);
+    setTimeout(() => input?.focus(), FOCUS_DELAY_MS);
   }
 }
 
+/**
+ * Appends a chat bubble to the messages pane and auto-scrolls to the bottom.
+ * @param {"user"|"bot"} role - Who sent the message.
+ * @param {string}       text - Message content (may contain markdown-like formatting).
+ */
 function addMessage(role, text) {
   const messagesEl = document.getElementById("ecobot-messages");
   const bubble = document.createElement("div");
@@ -145,6 +174,11 @@ function addMessage(role, text) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+/**
+ * Converts lightweight markdown-like syntax (bold, bullets, code) to HTML.
+ * @param {string} text - Raw message text.
+ * @returns {string} HTML string.
+ */
 function formatMessage(text) {
   // Convert markdown-like formatting to HTML
   return text
@@ -154,6 +188,9 @@ function formatMessage(text) {
     .replace(/`(.*?)`/g, "<code>$1</code>");
 }
 
+/**
+ * Inserts an animated "typing…" indicator into the chat messages area.
+ */
 function showTypingIndicator() {
   const messagesEl = document.getElementById("ecobot-messages");
   const typing = document.createElement("div");
@@ -168,10 +205,18 @@ function showTypingIndicator() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+/**
+ * Removes the typing indicator bubble (if present) from the chat.
+ */
 function removeTypingIndicator() {
   document.getElementById("ecobot-typing")?.remove();
 }
 
+/**
+ * Handles a user's chat message: shows it in the UI, sends it to Gemini
+ * (or the fallback responder), and appends the reply.
+ * @param {string} text - The user's message text.
+ */
 async function handleUserMessage(text) {
   if (isTyping) return;
 
@@ -207,6 +252,13 @@ async function handleUserMessage(text) {
   }
 }
 
+/**
+ * Calls the Gemini generative-AI API (or a configured proxy) to produce a
+ * response for the user's message.
+ * @param {string} userMessage - The latest user message.
+ * @returns {Promise<string>} The model's reply text.
+ * @throws {Error} If the API returns a non-OK status or an empty response.
+ */
 async function callGemini(userMessage) {
   if (!hasGeminiConfig()) {
     return getFallbackResponse(userMessage);
@@ -222,9 +274,9 @@ async function callGemini(userMessage) {
     contents: chatHistory,
     systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 300,
-      topP: 0.9,
+      temperature: GEMINI_TEMPERATURE,
+      maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+      topP: GEMINI_TOP_P,
     },
   };
 
@@ -241,6 +293,12 @@ async function callGemini(userMessage) {
   return text.trim();
 }
 
+/**
+ * Returns a pre-written answer when the Gemini API is not available.
+ * Matches keywords in the question to pick the most relevant response.
+ * @param {string} question - The user's question text.
+ * @returns {string} A static eco-related answer.
+ */
 function getFallbackResponse(question) {
   const q = question.toLowerCase();
   if (q.includes("carbon footprint") || q.includes("co2")) {
@@ -265,6 +323,10 @@ function getFallbackResponse(question) {
 }
 
 // ── Initialize ──
+/**
+ * Initialises the EcoBot chat widget on the current page.
+ * Skipped on pages that include a `[data-no-chatbot]` element.
+ */
 export function initEcoBot() {
   // Don't show on pages that are too small (like modals)
   if (document.querySelector("[data-no-chatbot]")) return;

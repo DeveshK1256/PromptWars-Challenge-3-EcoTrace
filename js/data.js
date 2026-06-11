@@ -1,3 +1,23 @@
+/**
+ * @module data
+ * Static reference data for the EcoTrace application.
+ * Exports pre-defined challenges, badges, fallback tips, news articles,
+ * map spots, topic/category lists, and historical country emission figures.
+ */
+
+/**
+ * Weekly / monthly eco-challenges users can accept.
+ *
+ * @type {Array<{
+ *   id: string,
+ *   title: string,
+ *   description: string,
+ *   points: number,
+ *   deadline: string,
+ *   category: string,
+ *   icon: string
+ * }>}
+ */
 export const CHALLENGES = [
   {
     id: "car-free-3",
@@ -37,6 +57,16 @@ export const CHALLENGES = [
   },
 ];
 
+/**
+ * Gamification badges awarded when a user's total eco-points reach a threshold.
+ *
+ * @type {Array<{
+ *   id: string,
+ *   label: string,
+ *   icon: string,
+ *   threshold: number
+ * }>}
+ */
 export const BADGES = [
   { id: "seedling", label: "Seedling", icon: "🌱", threshold: 25 },
   { id: "starter", label: "Eco Starter", icon: "🌿", threshold: 100 },
@@ -44,6 +74,20 @@ export const BADGES = [
   { id: "defender", label: "Earth Defender", icon: "🌍", threshold: 500 },
 ];
 
+/**
+ * Static carbon-saving tips shown when the Gemini AI service is unavailable.
+ * Each tip belongs to a category and describes a concrete action with an
+ * estimated annual CO₂ saving in kilograms.
+ *
+ * @type {Array<{
+ *   id: string,
+ *   category: string,
+ *   title: string,
+ *   savingKg: number,
+ *   difficulty: "Easy"|"Medium"|"Hard",
+ *   body: string
+ * }>}
+ */
 export const FALLBACK_TIPS = [
   {
     id: "tip-transit-pass",
@@ -87,6 +131,21 @@ export const FALLBACK_TIPS = [
   },
 ];
 
+/**
+ * Curated environment and climate news articles from around the world.
+ * Grouped by region in source-code comments (USA, Europe, China, India, etc.).
+ *
+ * @type {Array<{
+ *   id: string,
+ *   category: string,
+ *   title: string,
+ *   source: string,
+ *   url: string,
+ *   summary: string,
+ *   readMinutes: number,
+ *   date: string
+ * }>}
+ */
 export const FEED_ARTICLES = [
   // --- USA ---
   {
@@ -413,6 +472,19 @@ export const FEED_ARTICLES = [
   },
 ];
 
+/**
+ * Fallback map pins shown when the Google Places API is not configured.
+ * Offsets are applied to the user's detected coordinates to place markers nearby.
+ *
+ * @type {Array<{
+ *   id: string,
+ *   category: string,
+ *   name: string,
+ *   address: string,
+ *   latOffset: number,
+ *   lngOffset: number
+ * }>}
+ */
 export const MAP_FALLBACK_SPOTS = [
   {
     id: "ev-1",
@@ -448,6 +520,12 @@ export const MAP_FALLBACK_SPOTS = [
   },
 ];
 
+/**
+ * Filter labels for the news-feed topic selector.
+ * The first entry ("All") is a wildcard that shows every article.
+ *
+ * @type {string[]}
+ */
 export const NEWS_TOPICS = [
   "All",
   "Climate Change",
@@ -456,10 +534,26 @@ export const NEWS_TOPICS = [
   "World Environment News",
 ];
 
+/**
+ * Filter labels for the tips section category selector.
+ *
+ * @type {string[]}
+ */
 export const TIP_CATEGORIES = ["All", "Transport", "Food", "Energy", "Shopping"];
 
+/**
+ * Available years for the country-emissions chart slider.
+ *
+ * @type {number[]}
+ */
 export const COUNTRY_EMISSIONS_YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
 
+/**
+ * Annual CO₂ emissions (in Mt CO₂) for the top 15 emitting countries,
+ * keyed by year. Used to render the comparative emissions bar chart.
+ *
+ * @type {Object<number, Array<{ country: string, flag: string, emissions: number }>>}
+ */
 export const COUNTRY_EMISSIONS = {
   2020: [
     { country: "China", flag: "🇨🇳", emissions: 10668 },
