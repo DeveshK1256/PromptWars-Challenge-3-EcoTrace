@@ -1,6 +1,6 @@
-import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-23";
-import { ecoService } from "./firebase.js?v=firebase-config-23";
-import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-23";
+import { hasFirebaseConfig, hasGeminiConfig, hasMapsConfig, hasSearchConfig } from "./config.js?v=firebase-config-24";
+import { ecoService } from "./firebase.js?v=firebase-config-24";
+import { BADGES, COUNTRY_EMISSIONS, COUNTRY_EMISSIONS_YEARS } from "./data.js?v=firebase-config-24";
 
 export const appState = {
   user: null,
@@ -360,6 +360,28 @@ function initAuthActions() {
       }
     });
   });
+
+  document.querySelectorAll("[data-forgot-password]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const form = btn.closest("[data-auth-form]") || document.querySelector("[data-auth-form]");
+      const email = form ? String(new FormData(form).get("email") || "").trim() : "";
+      if (!email) {
+        showToast("Enter your email address first, then click Forgot password.", "error");
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Sending...";
+      try {
+        await ecoService.sendPasswordReset(email);
+        showToast("Password reset email sent! Check your inbox.", "success");
+      } catch (error) {
+        showToast(error.message || "Could not send reset email. Check the address.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Forgot password?";
+      }
+    });
+  });
 }
 
 function initFooterYear() {
@@ -394,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadChatbot() {
     if (chatbotLoaded) return;
     chatbotLoaded = true;
-    import("./chatbot.js?v=firebase-config-23").then((m) => m.initEcoBot()).catch(() => {});
+    import("./chatbot.js?v=firebase-config-24").then((m) => m.initEcoBot()).catch(() => {});
   }
   setTimeout(loadChatbot, 2000);
   document.addEventListener("click", loadChatbot, { once: true });

@@ -1,4 +1,4 @@
-import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-23";
+import { ECO_CONFIG, hasFirebaseConfig } from "./config.js?v=firebase-config-24";
 
 const STORAGE_KEYS = Object.freeze({
   profile: "ecotrace.profile",
@@ -397,6 +397,20 @@ export const ecoService = {
       return;
     }
     await runtime.authMod.signOut(runtime.auth);
+  },
+
+  async sendPasswordReset(email) {
+    const runtime = await initFirebase();
+    if (!runtime) {
+      const accountKey = normalizeEmail(email);
+      const accounts = readDemoAccounts();
+      if (!accounts[accountKey]) {
+        throw createAuthError("auth/user-not-found", "No account exists for this email.");
+      }
+      addActivity("Password reset requested (demo mode).", "auth");
+      return;
+    }
+    await runtime.authMod.sendPasswordResetEmail(runtime.auth, email);
   },
 
   async getProfile(user) {

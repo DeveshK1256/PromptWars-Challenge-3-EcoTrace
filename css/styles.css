@@ -832,6 +832,27 @@ textarea:focus-visible {
   border-radius: 16px;
 }
 
+.forgot-password-row {
+  text-align: end;
+  margin-block-start: -0.3rem;
+  margin-block-end: 0.4rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--forest-deep);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0.2rem 0;
+  transition: color 0.2s ease;
+}
+.btn-link:hover { color: var(--forest); }
+.btn-link:disabled { opacity: 0.5; cursor: wait; }
+
 .radio-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
