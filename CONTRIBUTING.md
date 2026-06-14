@@ -36,9 +36,10 @@ npm install
 Run all checks before submitting:
 
 ```bash
-npm test          # 426 automated tests
+npm test          # 383 unit tests (Vitest + jsdom)
 npm run lint      # ESLint (must be 0 errors, 0 warnings)
 npm run format    # Prettier formatting
+npm run test:e2e  # Playwright E2E tests (requires browsers)
 node build.js     # Production build
 ```
 
@@ -61,13 +62,17 @@ test: add code quality validation tests
 All JS modules follow this dependency flow:
 
 ```
-config.js → data.js → firebase.js → gemini.js → app.js → [page modules]
+config.js → config.env.js → data.js → firebase.js → gemini.js → app.js → [page modules]
 ```
 
-- **config.js** — Frozen configuration, feature flags
-- **data.js** — Static reference data (no side effects)
-- **firebase.js** — Service layer with demo fallback
-- **app.js** — Core utilities, auth, navigation (imported by all pages)
+- **config.js / config.env.js** — Frozen configuration, env vars, feature flags
+- **logger.js** — Centralised logging (no raw `console.*` calls)
+- **data.js / data-countries.js** — Static reference data (no side effects)
+- **firebase.js / demo-store.js** — Service layer with demo fallback
+- **gemini.js** — AI integration (proxy → configured proxy → direct fallback)
+- **app.js / app-auth.js** — Core utilities, auth UI, navigation
 - **Page modules** — One per HTML page (calculator.js, dashboard.js, etc.)
-- **features.js** — 9 self-contained features (imported on all pages)
+- **features.js / features-social.js** — 9 self-contained features
 - **chatbot.js** — Lazily loaded AI chatbot widget
+- **netlify/functions/gemini.js** — Server-side Gemini proxy (rate-limited)
+- **functions/index.js** — Firebase Cloud Functions (scheduled + triggers)
