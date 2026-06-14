@@ -284,18 +284,7 @@ async function renderMap(center = userPosition) {
   );
 }
 
-/* ── Event listeners ────────────────────────────────────────────── */
 
-filters.forEach((button) => {
-  button.addEventListener("click", () => {
-    const category = button.dataset.mapFilter;
-    if (activeCategories.has(category)) activeCategories.delete(category);
-    else activeCategories.add(category);
-    if (!activeCategories.size) activeCategories = new Set(Object.keys(CATEGORY_META));
-    updateFilterButtons();
-    syncMarkerVisibility();
-  });
-});
 
 /**
  * Handles a map search when no Maps API key is configured (demo mode).
@@ -449,21 +438,72 @@ findButton?.addEventListener("click", async () => {
 });
 
 /**
- * Entry point for the map page — renders the default map, then checks URL
- * query-parameters for an initial search to execute.
+ * Creates (or re-creates) the Google Maps instance at the default user
+ * position and returns it once fully rendered.
+ * @returns {Promise<void>} Resolves after the default map has been rendered.
  */
-async function initMapPage() {
+async function createMapInstance() {
   await renderMap(userPosition);
+}
+
+/**
+ * Attaches click listeners to every category-filter button so toggling a
+ * button adds/removes the category from the active set.
+ * @returns {void}
+ */
+function addCategoryListeners() {
+  filters.forEach((button) => {
+    button.addEventListener("click", () => {
+      const category = button.dataset.mapFilter;
+      if (activeCategories.has(category)) activeCategories.delete(category);
+      else activeCategories.add(category);
+      if (!activeCategories.size) activeCategories = new Set(Object.keys(CATEGORY_META));
+      updateFilterButtons();
+      syncMarkerVisibility();
+    });
+  });
+}
+
+/**
+ * Pre-fills the search form with URL query-parameters (`place`, `q`,
+ * `category`) and wires up the form's submit event to `runMapSearch`.
+ * @returns {{ query: string, category: string }} Parsed query parameters.
+ */
+function setupSearchIntegration() {
   const params = new URLSearchParams(window.location.search);
   const query = params.get("place") || params.get("q") || "";
   const category = params.get("category") || "all";
+  if (searchForm) {
+    searchForm.elements.query.value = query;
+    searchForm.elements.category.value =
+      CATEGORY_META[category] || category === "all" ? category : "all";
+  }
+  return { query, category };
+}
+
+/**
+ * Executes an initial map search when URL parameters request a specific
+ * place or category so the page loads with relevant markers already shown.
+ * @param {string} query    - The search text from URL params.
+ * @param {string} category - The category key from URL params.
+ * @returns {Promise<void>} Resolves after the search completes (or skips).
+ */
+async function loadInitialMarkers(query, category) {
   if (query || category !== "all") {
-    if (searchForm) {
-      searchForm.elements.query.value = query;
-      searchForm.elements.category.value = CATEGORY_META[category] || category === "all" ? category : "all";
-    }
     await runMapSearch(query, category);
   }
+}
+
+/**
+ * Entry point for the map page — creates the map, wires up category
+ * filters and search integration, then loads initial markers from URL params.
+ * @returns {Promise<void>} Resolves when the page is fully initialised.
+ */
+async function initMapPage() {
+  await createMapInstance();
+  addCategoryListeners();
+  const { query, category } = setupSearchIntegration();
+  await loadInitialMarkers(query, category);
 }
 
 initMapPage().catch((error) => {

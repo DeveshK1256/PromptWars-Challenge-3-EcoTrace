@@ -6,7 +6,7 @@
  * when Firebase credentials are not configured.
  */
 import { ECO_CONFIG, hasFirebaseConfig } from "./config.js";
-import { logError } from "./logger.js";
+import { logError, logInfo, logWarn } from "./logger.js";
 
 import {
   normalizeEmail, createAuthError, hashDemoPassword,
@@ -81,13 +81,31 @@ async function initFirebase() {
       import("https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js"),
       import("https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js"),
-    ]).then(([appMod, authMod, dbMod]) => {
+    ]).then(async ([appMod, authMod, dbMod]) => {
       const app = appMod.initializeApp(ECO_CONFIG.firebase);
       const auth = authMod.getAuth(app);
       const db = dbMod.getFirestore(app);
       const provider = new authMod.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       firebaseRuntime = { app, auth, db, provider, authMod, dbMod };
+
+      // Enable Firebase App Check with reCAPTCHA Enterprise
+      try {
+        const appCheckMod = await import(
+          'https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js'
+        );
+        const recaptchaKey = ECO_CONFIG.firebase.recaptchaSiteKey || '';
+        if (recaptchaKey && !recaptchaKey.startsWith('__')) {
+          appCheckMod.initializeAppCheck(app, {
+            provider: new appCheckMod.ReCaptchaEnterpriseProvider(recaptchaKey),
+            isTokenAutoRefreshEnabled: true,
+          });
+          logInfo('firebase', 'App Check initialised');
+        }
+      } catch (appCheckError) {
+        logWarn('firebase', 'App Check unavailable', appCheckError);
+      }
+
       return firebaseRuntime;
     });
   }

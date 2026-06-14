@@ -229,6 +229,55 @@ function renderReductionGoals(footprints) {
 }
 
 /**
+ * Fetches footprints and activities from Firestore, sorts footprints
+ * newest-first, and caches the activity log for the streak heatmap.
+ * @param {Object} user - The authenticated Firebase user object.
+ * @returns {Promise<{ sorted: Array<Object>, activities: Array<Object> }>}
+ *   Sorted footprints and raw activity records.
+ * @throws {Error} If Firestore queries fail.
+ */
+async function fetchAndSortFootprints(user) {
+  const [footprints, activities] = await Promise.all([
+    ecoService.getFootprints(user),
+    ecoService.getActivities(user),
+  ]);
+  localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
+  return { sorted: sortFootprints(footprints), activities };
+}
+
+/**
+ * Populates the dashboard summary cards (streak, points, CO₂ saved)
+ * from the user's profile and wires up the CSV-export button.
+ * @param {Object} profile - The user's EcoTrace profile data.
+ * @param {Array<Object>} sorted - Footprint records sorted newest-first.
+ * @returns {void}
+ */
+function updateSummaryCards(profile, sorted) {
+  document
+    .querySelector('[data-export-csv]')
+    ?.addEventListener('click', () => exportCSV(sorted));
+  setText("[data-streak-days]", `${profile?.streak || 5}-day reduction streak!`);
+  setText("[data-dashboard-points]", `${Number(profile?.greenPoints || 0).toLocaleString()} points`);
+  setText("[data-dashboard-saved]", formatKg(profile?.co2Saved || 0));
+}
+
+/**
+ * Renders an empty-state message inside the given container when there
+ * are no footprint records to display.
+ * @param {Element|null} container - The DOM element to show the empty state in.
+ * @returns {void}
+ */
+function renderEmptyState(container) {
+  if (!container) return;
+  container.append(
+    buildEmptyState(
+      "No footprint data yet",
+      "Complete a carbon footprint calculation to see your dashboard.",
+    ),
+  );
+}
+
+/**
  * Fetches footprint history and activity log, then renders the complete
  * dashboard: metric cards, city comparison, charts, activity log,
  * monthly trend, CSV export, streak, points, and CO₂ saved.
@@ -238,12 +287,13 @@ function renderReductionGoals(footprints) {
  * @throws {Error} If fetching footprints or activities from Firestore fails.
  */
 async function renderDashboard(user, profile) {
-  const [footprints, activities] = await Promise.all([ecoService.getFootprints(user), ecoService.getActivities(user)]);
+  const { sorted, activities } = await fetchAndSortFootprints(user);
 
-  /* Cache activities so the eco-streak heatmap can use real data */
-  localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
+  if (!sorted.length) {
+    renderEmptyState(document.querySelector("[data-dashboard-error]"));
+    return;
+  }
 
-  const sorted = sortFootprints(footprints);
   const latest = sorted[0];
   renderMetricCards(latest);
   renderCityComparison(latest);
@@ -252,10 +302,7 @@ async function renderDashboard(user, profile) {
   renderActivityLog(activities);
   renderMonthlyTrend(sorted);
   renderReductionGoals(sorted);
-  document.querySelector('[data-export-csv]')?.addEventListener('click', () => exportCSV(sorted));
-  setText("[data-streak-days]", `${profile?.streak || 5}-day reduction streak!`);
-  setText("[data-dashboard-points]", `${Number(profile?.greenPoints || 0).toLocaleString()} points`);
-  setText("[data-dashboard-saved]", formatKg(profile?.co2Saved || 0));
+  updateSummaryCards(profile, sorted);
 }
 
 onUserReady((user, profile) => {

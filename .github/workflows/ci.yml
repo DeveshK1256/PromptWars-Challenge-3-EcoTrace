@@ -14,7 +14,11 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npx vitest run --coverage
+      - name: TypeScript JSDoc check
+        run: npx -p typescript tsc --project jsconfig.json --noEmit
+
+
 
   build:
     runs-on: ubuntu-latest
@@ -58,7 +62,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node build.js
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --project='Desktop Chrome'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -129,7 +129,7 @@ describe("Project Configuration", () => {
 
   it("has CI pipeline", () => {
     const content = readFileSync(resolve(".github/workflows/ci.yml"), "utf-8");
-    expect(content).toContain("npm test");
+    expect(content).toContain("vitest run --coverage");
     expect(content).toContain("node-version");
   });
 

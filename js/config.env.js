@@ -15,4 +15,5 @@ export const ENV = Object.freeze({
   GEMINI_API_KEY: '__GEMINI_API_KEY__',
   SEARCH_API_KEY: '__SEARCH_API_KEY__',
   SEARCH_CX: '__SEARCH_CX__',
+  RECAPTCHA_SITE_KEY: '__RECAPTCHA_SITE_KEY__',
 });

@@ -42,6 +42,7 @@ export const ECO_CONFIG = Object.freeze({
     storageBucket: envOrDefault(ENV.FIREBASE_STORAGE_BUCKET, "psyched-metrics-469316-u1.firebasestorage.app"),
     messagingSenderId: envOrDefault(ENV.FIREBASE_MESSAGING_SENDER_ID, "1034904942068"),
     appId: envOrDefault(ENV.FIREBASE_APP_ID, "1:1034904942068:web:380a4112d8ea683b5735a1"),
+    recaptchaSiteKey: envOrDefault(ENV.RECAPTCHA_SITE_KEY, ''),
   },
   google: {
     mapsApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
