@@ -255,8 +255,7 @@ function addMessage(role, text) {
 
   const content = document.createElement("div");
   content.className = "ecobot-msg-content";
-  // Safe: formatMessage() escapes all HTML entities before applying formatting
-  content.innerHTML = formatMessage(text);
+  content.append(formatMessage(text));
 
   const time = document.createElement("span");
   time.className = "ecobot-msg-time";
@@ -271,17 +270,39 @@ function addMessage(role, text) {
 }
 
 /**
- * Converts lightweight markdown-like syntax (bold, bullets, code) to HTML.
+ * Converts lightweight markdown-like syntax (bold, bullets, code) into a
+ * DOM DocumentFragment using safe DOM API methods.
  * @param {string} text - Raw message text.
- * @returns {string} HTML string.
+ * @returns {DocumentFragment} Fragment containing formatted DOM nodes.
  */
 function formatMessage(text) {
-  // Convert markdown-like formatting to HTML
-  return text
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n- /g, "\n• ")
-    .replace(/\n/g, "<br>")
-    .replace(/`(.*?)`/g, "<code>$1</code>");
+  const fragment = document.createDocumentFragment();
+  // Replace bullet-style lines before splitting
+  const prepared = text.replace(/\n- /g, "\n• ");
+  const lines = prepared.split("\n");
+  lines.forEach((line, index) => {
+    // Process inline formatting: **bold** and `code`
+    const parts = line.split(/(\*\*.*?\*\*|`.*?`)/g);
+    parts.forEach((part) => {
+      const boldMatch = part.match(/^\*\*(.*?)\*\*$/);
+      const codeMatch = part.match(/^`(.*?)`$/);
+      if (boldMatch) {
+        const strong = document.createElement("strong");
+        strong.textContent = boldMatch[1];
+        fragment.append(strong);
+      } else if (codeMatch) {
+        const code = document.createElement("code");
+        code.textContent = codeMatch[1];
+        fragment.append(code);
+      } else {
+        fragment.append(part);
+      }
+    });
+    if (index < lines.length - 1) {
+      fragment.append(document.createElement("br"));
+    }
+  });
+  return fragment;
 }
 
 /**

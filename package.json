@@ -14,7 +14,9 @@
     "lint": "eslint js/ --fix",
     "format": "prettier --write \"js/**/*.js\" \"*.html\" \"css/**/*.css\"",
     "build": "node build.js",
-    "deploy:prod": "node build.js && npx netlify-cli deploy --prod --dir=dist"
+    "deploy:prod": "node build.js && npx netlify-cli deploy --prod --dir=dist",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +26,7 @@
     "@eslint/js": "^10.0.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.4.1",
+    "jsdom": "^29.1.1",
     "vitest": "^4.1.8"
   }
 }

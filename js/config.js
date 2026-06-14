@@ -3,7 +3,25 @@
  * Centralised configuration for the EcoTrace application.
  * Contains Firebase, Google Maps/Search, Gemini AI, and app-level
  * constants. All values are frozen at module load time.
+ *
+ * API keys are resolved at build time via `config.env.js`. During local
+ * development the placeholders remain unreplaced and the hardcoded
+ * fallback values below are used instead.
  */
+
+import { ENV } from './config.env.js';
+
+/**
+ * Returns the build-time env value when it has been replaced by the build
+ * script, otherwise falls back to the provided default.
+ *
+ * @param {string} envValue  - The placeholder (or replaced) value from ENV.
+ * @param {string} defaultValue - Hardcoded fallback for local development.
+ * @returns {string} The resolved configuration value.
+ */
+function envOrDefault(envValue, defaultValue) {
+  return envValue && !envValue.startsWith('__') ? envValue : defaultValue;
+}
 
 /**
  * Application-wide configuration object.
@@ -18,24 +36,24 @@
  */
 export const ECO_CONFIG = Object.freeze({
   firebase: {
-    apiKey: "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk",
-    authDomain: "psyched-metrics-469316-u1.firebaseapp.com",
-    projectId: "psyched-metrics-469316-u1",
-    storageBucket: "psyched-metrics-469316-u1.firebasestorage.app",
-    messagingSenderId: "1034904942068",
-    appId: "1:1034904942068:web:380a4112d8ea683b5735a1",
+    apiKey: envOrDefault(ENV.FIREBASE_API_KEY, "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk"),
+    authDomain: envOrDefault(ENV.FIREBASE_AUTH_DOMAIN, "psyched-metrics-469316-u1.firebaseapp.com"),
+    projectId: envOrDefault(ENV.FIREBASE_PROJECT_ID, "psyched-metrics-469316-u1"),
+    storageBucket: envOrDefault(ENV.FIREBASE_STORAGE_BUCKET, "psyched-metrics-469316-u1.firebasestorage.app"),
+    messagingSenderId: envOrDefault(ENV.FIREBASE_MESSAGING_SENDER_ID, "1034904942068"),
+    appId: envOrDefault(ENV.FIREBASE_APP_ID, "1:1034904942068:web:380a4112d8ea683b5735a1"),
   },
   google: {
-    mapsApiKey: "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI",
-    placesApiKey: "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI",
-    customSearchApiKey: "AIzaSyDq6RlIaCJ-nRTt-NZ6JOejR0j_5OMFtao",
-    customSearchCx: "",
+    mapsApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
+    placesApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
+    customSearchApiKey: envOrDefault(ENV.SEARCH_API_KEY, "AIzaSyDq6RlIaCJ-nRTt-NZ6JOejR0j_5OMFtao"),
+    customSearchCx: envOrDefault(ENV.SEARCH_CX, "a1b2c3d4e5f6g7h8i"),
   },
   gemini: {
     // Production recommendation: set geminiProxyEndpoint to a Firebase Function
     // and keep the Gemini key server-side. geminiApiKey is for local demos only.
     proxyEndpoint: "",
-    apiKey: "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk",
+    apiKey: envOrDefault(ENV.GEMINI_API_KEY, "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk"),
     model: "gemini-2.0-flash-lite",
   },
   app: {

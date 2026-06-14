@@ -29,6 +29,29 @@ for (const file of jsFiles) {
   });
 }
 
+// 1b. Replace env var placeholders in built JS with process.env values
+const envReplacements = {
+  '__FIREBASE_API_KEY__': process.env.FIREBASE_API_KEY || '',
+  '__FIREBASE_AUTH_DOMAIN__': process.env.FIREBASE_AUTH_DOMAIN || '',
+  '__FIREBASE_PROJECT_ID__': process.env.FIREBASE_PROJECT_ID || '',
+  '__FIREBASE_STORAGE_BUCKET__': process.env.FIREBASE_STORAGE_BUCKET || '',
+  '__FIREBASE_MESSAGING_SENDER_ID__': process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+  '__FIREBASE_APP_ID__': process.env.FIREBASE_APP_ID || '',
+  '__MAPS_API_KEY__': process.env.MAPS_API_KEY || '',
+  '__GEMINI_API_KEY__': process.env.GEMINI_API_KEY || '',
+  '__SEARCH_API_KEY__': process.env.SEARCH_API_KEY || '',
+  '__SEARCH_CX__': process.env.SEARCH_CX || '',
+};
+for (const file of jsFiles) {
+  const filePath = join(DIST, "js", file);
+  let content = readFileSync(filePath, "utf-8");
+  for (const [placeholder, value] of Object.entries(envReplacements)) {
+    content = content.replaceAll(placeholder, value);
+  }
+  writeFileSync(filePath, content);
+}
+
+
 // 2. Minify CSS
 await build({
   entryPoints: ["css/styles.css"],

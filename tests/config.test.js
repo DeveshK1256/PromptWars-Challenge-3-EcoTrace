@@ -81,9 +81,9 @@ describe("hasSearchConfig", () => {
     expect(typeof hasSearchConfig()).toBe("boolean");
   });
 
-  it("returns false when customSearchCx is empty", () => {
-    // Current config has empty customSearchCx
-    expect(hasSearchConfig()).toBe(false);
+  it("returns true when customSearchCx is configured", () => {
+    // Current config has customSearchCx set
+    expect(hasSearchConfig()).toBe(true);
   });
 });
 

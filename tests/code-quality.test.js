@@ -51,23 +51,10 @@ describe("Code Quality Standards", () => {
   });
 
   describe("Safe DOM Manipulation", () => {
-    jsFiles
-      .filter(({ name }) => !["chatbot.js"].includes(name))
-      .forEach(({ name, content }) => {
-        it(`${name} does not use innerHTML`, () => {
-          // chatbot.js has 1 safe usage with explicit comment
-          expect(content).not.toContain(".innerHTML");
-        });
+    jsFiles.forEach(({ name, content }) => {
+      it(`${name} does not use innerHTML`, () => {
+        expect(content).not.toContain(".innerHTML");
       });
-
-    it("chatbot.js innerHTML usage has safety comment", () => {
-      const chatbot = jsFiles.find((f) => f.name === "chatbot.js");
-      const lines = chatbot.content.split("\n");
-      const innerHTMLLine = lines.findIndex((l) => l.includes(".innerHTML"));
-      expect(innerHTMLLine).toBeGreaterThan(-1);
-      // The line before should have the safety comment
-      const commentLine = lines[innerHTMLLine - 1] || "";
-      expect(commentLine).toContain("Safe");
     });
   });
 

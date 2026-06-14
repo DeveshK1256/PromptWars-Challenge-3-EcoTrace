@@ -32,6 +32,9 @@ const DEFAULT_SAVING_KG = 25;
 /** @type {number} Temperature setting for the Gemini generation config (0–1 scale). */
 const GEMINI_TEMPERATURE = 0.4;
 
+/** @type {string} Netlify serverless proxy endpoint for Gemini API calls. */
+const PROXY_ENDPOINT = '/.netlify/functions/gemini-proxy';
+
 /* ── Internal helpers ──────────────────────────────────────────── */
 
 /**
@@ -130,6 +133,32 @@ export async function getPersonalizedTips(profile) {
   }
 
   const prompt = buildPrompt(profile);
+  const requestBody = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: GEMINI_TEMPERATURE,
+      responseMimeType: "application/json",
+    },
+    model: ECO_CONFIG.gemini.model,
+  };
+
+  /* ── 1. Try the Netlify serverless proxy first ──────────────────── */
+  try {
+    const proxyRes = await fetch(PROXY_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      return { source: "gemini-proxy", tips: parseGeminiResponse(data) };
+    }
+    /* Non-OK status → fall through to next strategy */
+  } catch {
+    /* Network error (e.g. running locally without Netlify) → fall through */
+  }
+
+  /* ── 2. Try the configured proxy endpoint (if any) ──────────────── */
   try {
     if (ECO_CONFIG.gemini.proxyEndpoint) {
       const response = await fetch(ECO_CONFIG.gemini.proxyEndpoint, {
@@ -144,7 +173,12 @@ export async function getPersonalizedTips(profile) {
         : parseGeminiResponse(data);
       return { source: "gemini-proxy", tips };
     }
+  } catch (error) {
+    logWarn('gemini', 'Configured proxy failed, trying direct API', error);
+  }
 
+  /* ── 3. Fall back to direct Gemini API call ─────────────────────── */
+  try {
     const endpoint =
       `https://generativelanguage.googleapis.com/v1beta/models/` +
       `${encodeURIComponent(ECO_CONFIG.gemini.model)}` +
@@ -153,11 +187,8 @@ export async function getPersonalizedTips(profile) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: GEMINI_TEMPERATURE,
-          responseMimeType: "application/json",
-        },
+        contents: requestBody.contents,
+        generationConfig: requestBody.generationConfig,
       }),
     });
     if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
