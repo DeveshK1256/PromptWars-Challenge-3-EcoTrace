@@ -239,6 +239,10 @@ function renderReductionGoals(footprints) {
  */
 async function renderDashboard(user, profile) {
   const [footprints, activities] = await Promise.all([ecoService.getFootprints(user), ecoService.getActivities(user)]);
+
+  /* Cache activities so the eco-streak heatmap can use real data */
+  localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
+
   const sorted = sortFootprints(footprints);
   const latest = sorted[0];
   renderMetricCards(latest);

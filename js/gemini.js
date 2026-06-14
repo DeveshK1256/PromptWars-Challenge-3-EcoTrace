@@ -33,7 +33,7 @@ const DEFAULT_SAVING_KG = 25;
 const GEMINI_TEMPERATURE = 0.4;
 
 /** @type {string} Netlify serverless proxy endpoint for Gemini API calls. */
-const PROXY_ENDPOINT = '/.netlify/functions/gemini-proxy';
+const PROXY_ENDPOINT = '/.netlify/functions/gemini';
 
 /* ── Internal helpers ──────────────────────────────────────────── */
 

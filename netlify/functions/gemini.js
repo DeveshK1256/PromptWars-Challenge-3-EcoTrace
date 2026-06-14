@@ -1,22 +1,61 @@
 /**
- * @module gemini-proxy
+ * @module gemini
  * Netlify serverless function that proxies Gemini API calls.
  * Keeps the Gemini API key server-side so it is never exposed to the browser.
+ * Includes per-IP rate limiting (one call per 10 seconds).
  *
- * Endpoint: POST /api/gemini
+ * Endpoint: POST /.netlify/functions/gemini
  * Expects JSON body with `contents`, `generationConfig`, and optional `model`.
  */
 
 /* global Response, process */
 
 /** @type {string} Default Gemini model when the client doesn't specify one. */
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash-lite';
 
 /** @type {string} Base URL for the Gemini generateContent REST API. */
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+/** @type {number} Minimum interval (ms) between calls from the same IP. */
+const RATE_LIMIT_MS = 10_000;
+
+/** @type {Map<string, number>} Maps client IP → timestamp of last allowed call. */
+const rateLimitMap = new Map();
+
 /**
- * Netlify edge-function handler that forwards requests to the Gemini API.
+ * Extracts the client IP address from the incoming request headers.
+ *
+ * @param {Request} request - The incoming HTTP request.
+ * @returns {string} The client IP, or 'unknown' if not determinable.
+ */
+function getClientIp(request) {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('client-ip') ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
+
+/**
+ * Checks whether the given IP is rate-limited.
+ * If not limited, records the current timestamp for that IP.
+ *
+ * @param {string} ip - The client IP address.
+ * @returns {boolean} `true` if the request should be blocked, `false` if allowed.
+ */
+function isRateLimited(ip) {
+  const now = Date.now();
+  const lastCall = rateLimitMap.get(ip) || 0;
+  if (now - lastCall < RATE_LIMIT_MS) {
+    return true;
+  }
+  rateLimitMap.set(ip, now);
+  return false;
+}
+
+/**
+ * Netlify serverless handler that forwards requests to the Gemini API.
  *
  * @param {Request} request - The incoming HTTP request.
  * @returns {Promise<Response>} The proxied Gemini API response (or an error).
@@ -24,6 +63,18 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 export default async function handler(request) {
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
+  }
+
+  /* ── Rate limiting ──────────────────────────────────────────── */
+  const ip = getClientIp(request);
+  if (isRateLimited(ip)) {
+    return new Response(
+      JSON.stringify({ error: 'Rate limited — please wait 10 seconds between requests.' }),
+      {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -65,5 +116,3 @@ export default async function handler(request) {
     });
   }
 }
-
-export const config = { path: '/api/gemini' };

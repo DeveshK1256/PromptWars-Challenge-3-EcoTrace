@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "source": "functions"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
@@ -50,6 +53,10 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/api/gemini",
+        "function": "geminiProxy"
+      },
       {
         "source": "/",
         "destination": "/index.html"

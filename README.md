@@ -273,6 +273,33 @@ npm run lint          # ESLint check
 
 ---
 
+## 🔐 Environment Variables
+
+All sensitive keys are loaded from a **`.env`** file at the project root (git-ignored).
+Copy the template and fill in your own values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_FIREBASE_API_KEY` | Firebase Web API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth domain (`<project>.firebaseapp.com`) |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage bucket URL |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Cloud Messaging sender ID |
+| `VITE_FIREBASE_APP_ID` | Firebase app ID |
+| `VITE_MAPS_API_KEY` | Google Maps / Places API key |
+| `VITE_GEMINI_KEY` | Google Gemini AI API key |
+| `VITE_GOOGLE_SEARCH_KEY` | Google Custom Search API key |
+| `VITE_GOOGLE_SEARCH_CX` | Google Custom Search engine ID |
+| `VITE_RECAPTCHA_SITE_KEY` | reCAPTCHA v3 site key (optional) |
+
+> See [`.env.example`](.env.example) for the full template.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

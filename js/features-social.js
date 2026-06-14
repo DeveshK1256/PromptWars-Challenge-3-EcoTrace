@@ -29,27 +29,88 @@ const PLEDGES_KEY = "eco-pledges";
 /** @const {string} localStorage key for last calculated footprint. */
 const FOOTPRINT_KEY = "lastFootprintKg";
 
+/** @const {string} localStorage key for cached activity data. */
+const ACTIVITIES_CACHE_KEY = "eco-activities-cache";
+
+/**
+ * @const {string[]} Colour stops for heatmap cells, from no-activity
+ * through maximum intensity (inspired by GitHub contribution colours).
+ */
+const HEATMAP_COLOUR_STOPS = [
+  '#ebedf0',
+  '#9be9a8',
+  '#40c463',
+  '#30a14e',
+  '#216e39',
+];
+
 /* ===== 5. ECO STREAK HEATMAP ===== */
 
 /**
- * Generates heatmap cell data with activity levels and streak counters.
+ * Groups an array of activity objects by ISO date (YYYY-MM-DD) and
+ * returns a Map whose keys are date strings and values are the total
+ * CO₂ (kg) recorded on that date.
+ *
+ * Only activities within the last 365 days are included.
+ *
+ * @param {Array<{ createdAt: string, co2Kg?: number }>} activities
+ *   Raw activity objects; each should carry a parseable `createdAt`
+ *   timestamp and an optional `co2Kg` numeric value.
+ * @returns {Map<string, number>} ISO date → total CO₂ kg for that day.
+ */
+function buildHeatmapData(activities) {
+  /** @type {Map<string, number>} */
+  const map = new Map();
+  const now = new Date();
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - HEATMAP_DAYS);
+
+  activities.forEach((a) => {
+    const d = new Date(a.createdAt);
+    if (d < cutoff || d > now) return;
+    const key = d.toISOString().slice(0, 10);
+    map.set(key, (map.get(key) || 0) + (Number(a.co2Kg) || 0));
+  });
+  return map;
+}
+
+/**
+ * Generates heatmap cell data from real cached activities, including
+ * CO₂ values, colour levels, and streak counters.
+ *
  * @param {number} days - Number of past days to generate.
- * @returns {{ cells: Array<{ date: Date, level: number }>, streak: number, maxStreak: number }}
+ * @returns {{ cells: Array<{ date: Date, level: number, value: number }>,
+ *            streak: number, maxStreak: number }}
  *   The cell data array together with current and longest streak lengths.
  */
 function createHeatmapCells(days) {
+  const raw = JSON.parse(
+    localStorage.getItem(ACTIVITIES_CACHE_KEY) || '[]'
+  );
+  const dataMap = buildHeatmapData(raw);
+
+  const maxValue = Math.max(...dataMap.values(), 0);
+
   const today = new Date();
   const cells = [];
-  let maxStreak = 0, currentStreak = 0;
+  let maxStreak = 0;
+  let currentStreak = 0;
 
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const level = i < 7
-      ? Math.floor(Math.random() * 3) + 1
-      : Math.floor(Math.random() * 5);
-    cells.push({ date: d, level });
-    if (level > 0) {
+    const key = d.toISOString().slice(0, 10);
+    const value = dataMap.get(key) || 0;
+    const level = maxValue > 0
+      ? Math.min(
+          Math.floor((value / maxValue) * (HEATMAP_COLOUR_STOPS.length - 1)),
+          HEATMAP_COLOUR_STOPS.length - 1
+        )
+      : 0;
+
+    cells.push({ date: d, level, value });
+
+    if (value > 0) {
       currentStreak++;
       maxStreak = Math.max(maxStreak, currentStreak);
     } else {
@@ -61,7 +122,10 @@ function createHeatmapCells(days) {
 
 /**
  * Builds the heatmap grid element containing one div per cell.
- * @param {Array<{ date: Date, level: number }>} cells - The cell data array.
+ * Each cell receives a background colour from {@link HEATMAP_COLOUR_STOPS}
+ * and a title tooltip showing the ISO date and CO₂ kg total.
+ *
+ * @param {Array<{ date: Date, level: number, value: number }>} cells - The cell data array.
  * @returns {HTMLDivElement} A container div with day-labels and the cell grid.
  */
 function buildHeatmapGrid(cells) {
@@ -79,13 +143,12 @@ function buildHeatmapGrid(cells) {
   const gridDiv = document.createElement('div');
   gridDiv.className = 'heatmap-grid';
   cells.forEach(c => {
-    const ds = c.date.toLocaleDateString("en-IN", {
-      day: "numeric", month: "short", year: "numeric",
-    });
+    const isoDate = c.date.toISOString().slice(0, 10);
     const cell = document.createElement('div');
     cell.className = 'heatmap-cell';
     cell.dataset.level = c.level;
-    cell.title = `${ds}: ${c.level} actions`;
+    cell.style.backgroundColor = HEATMAP_COLOUR_STOPS[c.level];
+    cell.title = `${isoDate}: ${c.value.toFixed(1)} kg CO\u2082`;
     gridDiv.append(cell);
   });
 
