@@ -2269,13 +2269,33 @@ textarea:focus-visible {
   padding-block: 0.5rem;
   font-size: 0.85rem;
   font-weight: 600;
+  position: relative;
+}
+.vitals-bar::before,
+.vitals-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.vitals-bar::before {
+  left: 0;
+  background: linear-gradient(to right, var(--forest-deep), transparent);
+}
+.vitals-bar::after {
+  right: 0;
+  background: linear-gradient(to left, var(--forest-deep), transparent);
 }
 .vitals-track {
   display: flex;
   gap: 3rem;
   inline-size: max-content;
-  animation: marquee-vitals 45s linear infinite;
+  animation: marquee-vitals 25s linear infinite;
   padding-inline: 1rem;
+  will-change: transform;
 }
 .vitals-track:hover { animation-play-state: paused; }
 .vitals-item { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
@@ -2542,7 +2562,7 @@ textarea:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vitals-track { animation: none; flex-wrap: wrap; inline-size: auto; }
+  .vitals-track { animation-duration: 120s; }
   .time-machine-fill { transition: none; }
   .compare-bar-fill { transition: none; }
 }
