@@ -2239,6 +2239,111 @@ textarea:focus-visible {
   border-color: var(--line);
 }
 
+/* Dark mode — Step indicators (calculator) */
+[data-theme="dark"] .step-indicator span {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+
+/* Dark mode — Map canvas */
+[data-theme="dark"] .map-canvas {
+  background: linear-gradient(135deg, #0f251e, #162420);
+}
+
+/* Dark mode — Chatbot */
+[data-theme="dark"] .ecobot-chip {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+[data-theme="dark"] .ecobot-input {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+[data-theme="dark"] .ecobot-panel {
+  background: var(--paper-deep);
+  border-color: var(--line);
+}
+[data-theme="dark"] .ecobot-header {
+  background: var(--forest-deep);
+}
+[data-theme="dark"] .ecobot-msg.bot {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+[data-theme="dark"] .ecobot-msg.user {
+  background: var(--forest);
+  color: #0d1a15;
+}
+
+/* Dark mode — Config banner */
+[data-theme="dark"] .config-banner {
+  background: rgba(78, 203, 142, 0.12);
+  color: var(--ink);
+}
+
+/* Dark mode — Time machine */
+[data-theme="dark"] .time-machine {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .time-machine-year {
+  color: var(--forest);
+}
+
+/* Dark mode — Offset cards */
+[data-theme="dark"] .offset-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Dark mode — Section headings */
+[data-theme="dark"] .section-heading h2 {
+  color: var(--ink);
+}
+[data-theme="dark"] .section-heading p {
+  color: var(--ink-2);
+}
+
+/* Dark mode — Page hero */
+[data-theme="dark"] .page-hero h1 {
+  color: var(--ink);
+}
+
+/* Dark mode — General text helpers */
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3 {
+  color: var(--ink);
+}
+
+/* Dark mode — Eco heatmap */
+[data-theme="dark"] .heatmap-panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Dark mode — Share card */
+[data-theme="dark"] .share-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Dark mode — Pledge wall */
+[data-theme="dark"] .pledge-card {
+  background: var(--surface-strong);
+  border-color: var(--line);
+}
+
+/* Dark mode — Comparison bars */
+[data-theme="dark"] .compare-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+/* Dark mode — Ambient sounds */
+[data-theme="dark"] .ambient-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
 .darkmode-toggle {
   display: flex;
   align-items: center;

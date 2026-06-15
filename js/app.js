@@ -128,14 +128,32 @@ function enforceAuthGuard(user) {
  * Subscribes to Firebase Auth state changes. On each change it refreshes
  * `appState`, updates the UI, enforces auth-guards, and notifies all
  * registered `onUserReady` handlers.
+ *
+ * The first callback from `onAuthStateChanged` may fire with `null`
+ * while Firebase restores a persisted session. We skip the auth-guard
+ * on that initial invocation and only enforce it once the SDK has had
+ * a chance to restore the token.
  */
 async function initAuth() {
+  let firstCall = true;
   await ecoService.onAuthState(async (user) => {
     appState.user = user;
     appState.profile = user ? await ecoService.getProfile(user) : null;
     appState.authReady = true;
     updateAuthUI(appState.user, appState.profile);
-    enforceAuthGuard(appState.user);
+
+    if (firstCall && !user) {
+      // Firebase may still be restoring a persisted session —
+      // wait briefly before enforcing the guard.
+      firstCall = false;
+      await new Promise((r) => setTimeout(r, 1500));
+      // Re-check: user may have been set by a second callback
+      if (!appState.user) enforceAuthGuard(null);
+    } else {
+      firstCall = false;
+      enforceAuthGuard(appState.user);
+    }
+
     userReadyHandlers.forEach((handler) => handler(appState.user, appState.profile));
   });
 }
