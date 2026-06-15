@@ -14,22 +14,26 @@ mkdirSync(DIST, { recursive: true });
 mkdirSync(join(DIST, "js"), { recursive: true });
 mkdirSync(join(DIST, "css"), { recursive: true });
 
-// 1. Minify all JS files (keep as individual modules for HTTP/2 multiplexing)
+// 1. Bundle & minify JS with code splitting (shared chunks for deduplication)
 const jsFiles = readdirSync("js").filter((f) => f.endsWith(".js"));
-for (const file of jsFiles) {
-  await build({
-    entryPoints: [join("js", file)],
-    outfile: join(DIST, "js", file),
-    minify: true,
-    format: "esm",
-    target: "es2022",
-    sourcemap: false,
-    // Don't bundle — keep external imports as-is for module loading
-    bundle: false,
-  });
-}
+const entryPoints = jsFiles.map((f) => join("js", f));
+await build({
+  entryPoints,
+  outdir: join(DIST, "js"),
+  bundle: true,
+  splitting: true,
+  format: "esm",
+  target: "es2022",
+  minify: true,
+  sourcemap: false,
+  // Firebase SDK and CDN libs stay as external imports
+  external: [
+    "https://www.gstatic.com/*",
+    "firebase/*",
+  ],
+});
 
-// 1b. Replace env var placeholders in built JS with process.env values
+// 1b. Replace env var placeholders in ALL built JS files (including chunks)
 const envReplacements = {
   '__FIREBASE_API_KEY__': process.env.FIREBASE_API_KEY || '',
   '__FIREBASE_AUTH_DOMAIN__': process.env.FIREBASE_AUTH_DOMAIN || '',
@@ -42,7 +46,8 @@ const envReplacements = {
   '__SEARCH_API_KEY__': process.env.SEARCH_API_KEY || '',
   '__SEARCH_CX__': process.env.SEARCH_CX || '',
 };
-for (const file of jsFiles) {
+const distJsFiles = readdirSync(join(DIST, "js")).filter((f) => f.endsWith(".js"));
+for (const file of distJsFiles) {
   const filePath = join(DIST, "js", file);
   let content = readFileSync(filePath, "utf-8");
   for (const [placeholder, value] of Object.entries(envReplacements)) {
@@ -96,6 +101,9 @@ let minifiedSize = 0;
 
 for (const file of jsFiles) {
   originalSize += readFileSync(join("js", file)).length;
+}
+const builtJsFiles = readdirSync(join(DIST, "js")).filter((f) => f.endsWith(".js"));
+for (const file of builtJsFiles) {
   minifiedSize += readFileSync(join(DIST, "js", file)).length;
 }
 originalSize += readFileSync("css/styles.css").length;
