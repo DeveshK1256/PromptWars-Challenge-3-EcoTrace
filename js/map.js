@@ -5,11 +5,20 @@
  * comprehensive fallback dataset when API keys are unavailable. Marker
  * rendering and sidebar list management are delegated to the companion
  * `map-ui` module. Search, geocoding, and Places-API logic live in the
- * companion `map-search` module.
+ * companion `map-search` module. Constants and the SDK loader are in
+ * `map-helpers`.
  */
-import { ECO_CONFIG, hasMapsConfig } from "./config.js";
+import { hasMapsConfig } from "./config.js";
 import { setButtonBusy, showToast } from "./app.js";
 import { logWarn, logError } from "./logger.js";
+import {
+  DEFAULT_LAT,
+  DEFAULT_LNG,
+  DEFAULT_MAP_ZOOM,
+  USER_MARKER_SCALE,
+  USER_MARKER_STROKE_WEIGHT,
+  loadMapsScript,
+} from "./map-helpers.js";
 import {
   CATEGORY_META,
   inferCategoryFromText,
@@ -30,23 +39,6 @@ import {
   syncMarkerVisibility,
   renderSpotResults,
 } from "./map-ui.js";
-
-/* ── Magic-number constants ─────────────────────────────────────── */
-
-/** Default map centre latitude (New Delhi). */
-const DEFAULT_LAT = 28.6139;
-
-/** Default map centre longitude (New Delhi). */
-const DEFAULT_LNG = 77.209;
-
-/** Default zoom level for the initial map render. */
-const DEFAULT_MAP_ZOOM = 13;
-
-/** Scale factor for the user-location marker circle. */
-const USER_MARKER_SCALE = 8;
-
-/** Stroke weight for the user-location marker border. */
-const USER_MARKER_STROKE_WEIGHT = 3;
 
 const mapNode = document.getElementById("ecoMap");
 const findButton = document.querySelector("[data-find-green-spots]");
@@ -69,25 +61,8 @@ function getCtx() {
   return { map, infoWindow, markers, activeCategories };
 }
 
-/**
- * Dynamically loads the Google Maps JavaScript SDK if not already present.
- * @returns {Promise<void>} Resolves when the SDK is available.
- */
-function loadMapsScript() {
-  if (window.google?.maps) return Promise.resolve();
-  const key = ECO_CONFIG.google.mapsApiKey || ECO_CONFIG.google.placesApiKey;
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src =
-      `https://maps.googleapis.com/maps/api/js` +
-      `?key=${encodeURIComponent(key)}&libraries=places&v=weekly`;
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.append(script);
-  });
-}
+
+
 
 /**
  * Synchronises the `aria-pressed` state of every category filter button

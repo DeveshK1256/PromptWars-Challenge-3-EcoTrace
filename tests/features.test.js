@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const featuresSource = readFileSync(resolve('js/features.js'), 'utf-8');
+const extrasSource = readFileSync(resolve('js/features-extras.js'), 'utf-8');
 const socialSource = readFileSync(resolve('js/features-social.js'), 'utf-8');
 const heatmapSource = readFileSync(resolve('js/heatmap.js'), 'utf-8');
 
@@ -14,9 +15,10 @@ describe('Features Module', () => {
 
     it('exports exactly 9 feature functions across all modules', () => {
       const coreExports = featuresSource.match(/export function \w+/g) || [];
+      const extrasExports = extrasSource.match(/export function \w+/g) || [];
       const socialExports = socialSource.match(/export function \w+/g) || [];
       const heatmapExports = heatmapSource.match(/export function \w+/g) || [];
-      expect(coreExports.length + socialExports.length + heatmapExports.length).toBe(9);
+      expect(coreExports.length + extrasExports.length + socialExports.length + heatmapExports.length).toBe(9);
     });
 
     it('has auto-init on DOMContentLoaded', () => {
@@ -26,11 +28,11 @@ describe('Features Module', () => {
 
   describe('Named Constants', () => {
     it('defines DEFAULT_FOOTPRINT_KG', () => {
-      expect(featuresSource).toContain('DEFAULT_FOOTPRINT_KG');
+      expect(extrasSource).toContain('DEFAULT_FOOTPRINT_KG');
     });
 
     it('defines KG_PER_TREE', () => {
-      expect(featuresSource).toContain('KG_PER_TREE');
+      expect(extrasSource).toContain('KG_PER_TREE');
     });
 
     it('defines CANVAS dimensions', () => {
@@ -39,13 +41,13 @@ describe('Features Module', () => {
     });
 
     it('defines AMBIENT_AUTO_STOP_MS', () => {
-      expect(featuresSource).toContain('AMBIENT_AUTO_STOP_MS');
+      expect(extrasSource).toContain('AMBIENT_AUTO_STOP_MS');
     });
 
     it('uses localStorage key constants', () => {
       expect(featuresSource).toContain('DARK_MODE_KEY');
       expect(socialSource).toContain('PLEDGES_KEY');
-      expect(featuresSource).toContain('FOOTPRINT_KEY');
+      expect(extrasSource).toContain('FOOTPRINT_KEY');
     });
   });
 
@@ -88,11 +90,11 @@ describe('Features Module', () => {
 
   describe('Feature 7: Ambient Sounds', () => {
     it('uses Web Audio API', () => {
-      expect(featuresSource).toContain('AudioContext');
+      expect(extrasSource).toContain('AudioContext');
     });
 
     it('auto-stops after timeout', () => {
-      expect(featuresSource).toContain('AMBIENT_AUTO_STOP_MS');
+      expect(extrasSource).toContain('AMBIENT_AUTO_STOP_MS');
     });
   });
 

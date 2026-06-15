@@ -48,7 +48,7 @@ export const ECO_CONFIG = Object.freeze({
     mapsApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
     placesApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
     customSearchApiKey: envOrDefault(ENV.SEARCH_API_KEY, "AIzaSyDq6RlIaCJ-nRTt-NZ6JOejR0j_5OMFtao"),
-    customSearchCx: envOrDefault(ENV.SEARCH_CX, "a1b2c3d4e5f6g7h8i"),
+    customSearchCx: envOrDefault(ENV.SEARCH_CX, "c4c9a158f97f447e0"),
   },
   gemini: {
     // Production recommendation: set geminiProxyEndpoint to a Firebase Function
