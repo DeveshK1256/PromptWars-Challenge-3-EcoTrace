@@ -127,10 +127,14 @@ describe("Project Configuration", () => {
     expect(content).toContain("prefer-const");
   });
 
-  it("has CI pipeline", () => {
+  it("has CI pipeline with all stages", () => {
     const content = readFileSync(resolve(".github/workflows/ci.yml"), "utf-8");
     expect(content).toContain("vitest run --coverage");
     expect(content).toContain("node-version");
+    expect(content).toContain("eslint");
+    expect(content).toContain("playwright test");
+    expect(content).toContain("lhci autorun");
+    expect(content).toContain("deploy --only functions");
   });
 
   it("package.json has lint and test scripts", () => {

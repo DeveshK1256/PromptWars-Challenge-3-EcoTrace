@@ -1,9 +1,11 @@
 /**
  * @module map
  * @description Interactive green-spots map page for EcoTrace. Handles Google
- * Maps initialisation, marker management, category filtering, and a
- * comprehensive fallback dataset when API keys are unavailable. Search,
- * geocoding, and Places-API logic live in the companion `map-search` module.
+ * Maps initialisation, category filtering, search orchestration, and a
+ * comprehensive fallback dataset when API keys are unavailable. Marker
+ * rendering and sidebar list management are delegated to the companion
+ * `map-ui` module. Search, geocoding, and Places-API logic live in the
+ * companion `map-search` module.
  */
 import { ECO_CONFIG, hasMapsConfig } from "./config.js";
 import { setButtonBusy, showToast } from "./app.js";
@@ -21,6 +23,13 @@ import {
   searchFallback,
   getCurrentPosition,
 } from "./map-search.js";
+import {
+  setStatus,
+  renderList,
+  clearSpotMarkers,
+  syncMarkerVisibility,
+  renderSpotResults,
+} from "./map-ui.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
@@ -30,14 +39,8 @@ const DEFAULT_LAT = 28.6139;
 /** Default map centre longitude (New Delhi). */
 const DEFAULT_LNG = 77.209;
 
-/** Zoom level used when the map focuses on a single spot. */
-const SINGLE_SPOT_ZOOM = 14;
-
 /** Default zoom level for the initial map render. */
 const DEFAULT_MAP_ZOOM = 13;
-
-/** Padding in pixels applied when fitting bounds around multiple spots. */
-const FIT_BOUNDS_PADDING_PX = 64;
 
 /** Scale factor for the user-location marker circle. */
 const USER_MARKER_SCALE = 8;
@@ -46,8 +49,6 @@ const USER_MARKER_SCALE = 8;
 const USER_MARKER_STROKE_WEIGHT = 3;
 
 const mapNode = document.getElementById("ecoMap");
-const listNode = document.querySelector("[data-map-list]");
-const statusNode = document.querySelector("[data-map-status]");
 const findButton = document.querySelector("[data-find-green-spots]");
 const searchForm = document.querySelector("[data-map-search-form]");
 const filters = [...document.querySelectorAll("[data-map-filter]")];
@@ -60,11 +61,12 @@ let renderedSpots = [];
 let markers = [];
 
 /**
- * Updates the map status text element.
- * @param {string} message - Status text to display.
+ * Returns a mutable context object referencing the current map state,
+ * used by map-ui rendering functions.
+ * @returns {object} Map context with map, infoWindow, markers, and activeCategories.
  */
-function setStatus(message) {
-  if (statusNode) statusNode.textContent = message;
+function getCtx() {
+  return { map, infoWindow, markers, activeCategories };
 }
 
 /**
@@ -104,120 +106,7 @@ function updateFilterButtons() {
 function setActiveCategory(category) {
   activeCategories = category === "all" ? new Set(Object.keys(CATEGORY_META)) : new Set([category]);
   updateFilterButtons();
-  syncMarkerVisibility();
-}
-
-/**
- * Renders the sidebar list of visible green spots, filtered by active categories.
- */
-function renderList() {
-  if (!listNode) return;
-  listNode.replaceChildren();
-  const visible = renderedSpots.filter((spot) => activeCategories.has(spot.category));
-  if (!visible.length) {
-    const item = document.createElement("li");
-    item.className = "map-result";
-    const body = document.createElement("div");
-    const title = document.createElement("strong");
-    title.textContent = "No matching green spots yet";
-    const text = document.createElement("p");
-    text.textContent = "Try a broader search term or enable more marker filters.";
-    body.append(title, text);
-    item.append(body);
-    listNode.append(item);
-    return;
-  }
-  visible.forEach((spot) => {
-    const item = document.createElement("li");
-    item.className = "map-result";
-    const icon = document.createElement("span");
-    icon.className = "map-result-icon";
-    icon.textContent = CATEGORY_META[spot.category]?.icon || "•";
-    const body = document.createElement("div");
-    const title = document.createElement("strong");
-    title.textContent = spot.name;
-    const address = document.createElement("p");
-    address.textContent =
-      `${spot.address || "Address available on map"}` +
-      ` • ${spot.distanceKm.toFixed(1)} km away`;
-    body.append(title, address);
-    item.append(icon, body);
-    listNode.append(item);
-  });
-}
-
-/**
- * Shows or hides map markers based on the current `activeCategories` set,
- * then refreshes the sidebar list.
- */
-function syncMarkerVisibility() {
-  markers.forEach(({ marker, category }) => {
-    marker.setMap(map && activeCategories.has(category) ? map : null);
-  });
-  renderList();
-}
-
-/**
- * Removes all green-spot markers from the map and empties the array.
- */
-function clearSpotMarkers() {
-  markers.forEach(({ marker }) => marker.setMap(null));
-  markers = [];
-}
-
-/**
- * Creates a Google Maps marker for a single green spot and registers a
- * click handler that opens an info-window.
- * @param {object} spot - The green-spot data object.
- */
-function addMarker(spot) {
-  if (!map || !window.google?.maps) return;
-  const marker = new google.maps.Marker({
-    map,
-    position: { lat: spot.lat, lng: spot.lng },
-    title: spot.name,
-    label: CATEGORY_META[spot.category]?.icon,
-  });
-  marker.addListener("click", () => {
-    infoWindow.setContent(
-      `<strong>${spot.name}</strong><br>` +
-      `${spot.address || "Address unavailable"}<br>` +
-      `${spot.distanceKm.toFixed(1)} km away`,
-    );
-    infoWindow.open({ map, anchor: marker });
-  });
-  markers.push({ marker, category: spot.category });
-}
-
-/**
- * Adjusts the map viewport to contain all provided spots.
- * @param {object[]} spots - Array of spot objects with `lat` and `lng`.
- */
-function fitMapToSpots(spots) {
-  if (!map || !window.google?.maps || !spots.length) return;
-  if (spots.length === 1) {
-    map.setCenter({ lat: spots[0].lat, lng: spots[0].lng });
-    map.setZoom(SINGLE_SPOT_ZOOM);
-    return;
-  }
-  const bounds = new google.maps.LatLngBounds();
-  spots.forEach((spot) => bounds.extend({ lat: spot.lat, lng: spot.lng }));
-  map.fitBounds(bounds, FIT_BOUNDS_PADDING_PX);
-}
-
-/**
- * Replaces the current map spots with a new set, sorts by distance, adds
- * markers, fits the viewport, and updates the status text.
- * @param {object[]} spots      - New spot data.
- * @param {string}   statusText - Status message to display.
- */
-function renderSpotResults(spots, statusText) {
-  clearSpotMarkers();
-  renderedSpots = spots.sort((a, b) => a.distanceKm - b.distanceKm);
-  renderedSpots.forEach(addMarker);
-  fitMapToSpots(renderedSpots);
-  syncMarkerVisibility();
-  setStatus(statusText);
+  syncMarkerVisibility(map, markers, renderedSpots, activeCategories);
 }
 
 /**
@@ -229,7 +118,7 @@ function renderSpotResults(spots, statusText) {
 async function renderMap(center = userPosition) {
   userPosition = center;
   renderedSpots = [];
-  clearSpotMarkers();
+  markers = clearSpotMarkers(markers);
   if (userMarker) {
     userMarker.setMap(null);
     userMarker = null;
@@ -243,7 +132,7 @@ async function renderMap(center = userPosition) {
         "Add a Maps API key in js/config.js for the live map.";
     }
     renderedSpots = fallbackSpots(center);
-    renderList();
+    renderList(renderedSpots, activeCategories);
     setStatus("Showing demo green spots near the selected location.");
     return;
   }
@@ -278,13 +167,14 @@ async function renderMap(center = userPosition) {
       fetchPlacesForCategory(category, center, map),
     ),
   );
-  renderSpotResults(
+  const ctx = getCtx();
+  renderedSpots = renderSpotResults(
+    ctx,
     groups.flat(),
     `Found ${groups.flat().length} green spots near you.`,
   );
+  markers = ctx.markers;
 }
-
-
 
 /**
  * Handles a map search when no Maps API key is configured (demo mode).
@@ -299,12 +189,15 @@ function handleDemoSearch(query, category) {
     query, category, location || userPosition,
     { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
   );
-  renderSpotResults(
+  const ctx = getCtx();
+  renderedSpots = renderSpotResults(
+    ctx,
     spots,
     spots.length
       ? `Found ${spots.length} demo green spots.`
       : "No demo matches found.",
   );
+  markers = ctx.markers;
 }
 
 /**
@@ -327,12 +220,15 @@ function handleLiveSearchResults(spots, query, effectiveCategory, searchLabel, r
   const categoryLabel = effectiveCategory === "all"
     ? "green spot"
     : CATEGORY_META[effectiveCategory].label.toLowerCase();
-  renderSpotResults(
+  const ctx = getCtx();
+  renderedSpots = renderSpotResults(
+    ctx,
     fallback,
     fallback.length
       ? `Found ${fallback.length} ${categoryLabel} results near ${searchLabel}.`
       : "No matching green spots found.",
   );
+  markers = ctx.markers;
   setActiveCategory(effectiveCategory);
   showToast(
     fallback.length ? "Map search updated." : "No matching green spots found.",
@@ -355,12 +251,15 @@ function handleSearchError(error, query, category) {
     query, category, location || userPosition,
     { treatAsLocation: Boolean(location) || !hasGreenIntent(query) },
   );
-  renderSpotResults(
+  const ctx = getCtx();
+  renderedSpots = renderSpotResults(
+    ctx,
     spots,
     spots.length
       ? `Showing ${spots.length} fallback search results.`
       : "Search failed and no fallback matches were found.",
   );
+  markers = ctx.markers;
   showToast("Map search used fallback results.", "error");
 }
 
@@ -385,7 +284,10 @@ async function runMapSearch(query, category = "all", submitter = null) {
     await loadMapsScript();
     if (!map) await renderMap(userPosition);
 
-    const effectiveCategory = category === "all" && hasGreenIntent(query) ? inferCategoryFromText(query) : category;
+    const effectiveCategory =
+      category === "all" && hasGreenIntent(query)
+        ? inferCategoryFromText(query)
+        : category;
     const cleanedLocationQuery = stripGreenServiceWords(query);
     const resolvedLocation = await resolveLocation(query, cleanedLocationQuery);
     if (resolvedLocation && !hasGreenIntent(query)) {
@@ -400,9 +302,10 @@ async function runMapSearch(query, category = "all", submitter = null) {
     }
 
     const searchCenter = resolvedLocation || userPosition;
-    const searchLabel = resolvedLocation?.label || cleanedLocationQuery || query || "your map area";
-    const spots = await searchPlaces(searchLabel, effectiveCategory, searchCenter, map);
-    handleLiveSearchResults(spots, query, effectiveCategory, searchLabel, resolvedLocation);
+    const searchLabel =
+      resolvedLocation?.label || cleanedLocationQuery || query || "your map area";
+    const apiSpots = await searchPlaces(searchLabel, effectiveCategory, searchCenter, map);
+    handleLiveSearchResults(apiSpots, query, effectiveCategory, searchLabel, resolvedLocation);
   } catch (error) {
     handleSearchError(error, query, category);
   } finally {
@@ -459,7 +362,7 @@ function addCategoryListeners() {
       else activeCategories.add(category);
       if (!activeCategories.size) activeCategories = new Set(Object.keys(CATEGORY_META));
       updateFilterButtons();
-      syncMarkerVisibility();
+      syncMarkerVisibility(map, markers, renderedSpots, activeCategories);
     });
   });
 }
@@ -510,5 +413,5 @@ initMapPage().catch((error) => {
   logError('map', error);
   setStatus("The map could not load. Showing fallback green spots.");
   renderedSpots = fallbackSpots(userPosition);
-  renderList();
+  renderList(renderedSpots, activeCategories);
 });

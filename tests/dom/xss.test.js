@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const allJsFiles = ['chatbot.js', 'dashboard.js', 'app.js', 'calculator.js', 'feed.js', 'features.js']
+const allJsFiles = ['chatbot.js', 'chatbot-ui.js', 'dashboard.js', 'app.js', 'calculator.js', 'feed.js', 'features.js']
   .map(f => readFileSync(resolve('js', f), 'utf-8'));
 
 describe('XSS Safety', () => {

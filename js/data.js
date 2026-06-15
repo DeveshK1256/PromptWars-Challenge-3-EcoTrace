@@ -3,6 +3,10 @@
  * Static reference data for the EcoTrace application.
  * Exports pre-defined challenges, badges, fallback tips, news articles,
  * map spots, topic/category lists, and historical country emission figures.
+ *
+ * NOTE: This file exceeds 400 lines but is intentionally kept as a single
+ * module because it contains only static data declarations with no
+ * executable logic — splitting it would not improve readability.
  */
 
 /**

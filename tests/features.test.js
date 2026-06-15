@@ -4,6 +4,7 @@ import { resolve } from 'path';
 
 const featuresSource = readFileSync(resolve('js/features.js'), 'utf-8');
 const socialSource = readFileSync(resolve('js/features-social.js'), 'utf-8');
+const heatmapSource = readFileSync(resolve('js/heatmap.js'), 'utf-8');
 
 describe('Features Module', () => {
   describe('Module Structure', () => {
@@ -11,10 +12,11 @@ describe('Features Module', () => {
       expect(featuresSource).toMatch(/@module\s+features/);
     });
 
-    it('exports exactly 9 feature functions across both modules', () => {
+    it('exports exactly 9 feature functions across all modules', () => {
       const coreExports = featuresSource.match(/export function \w+/g) || [];
       const socialExports = socialSource.match(/export function \w+/g) || [];
-      expect(coreExports.length + socialExports.length).toBe(9);
+      const heatmapExports = heatmapSource.match(/export function \w+/g) || [];
+      expect(coreExports.length + socialExports.length + heatmapExports.length).toBe(9);
     });
 
     it('has auto-init on DOMContentLoaded', () => {
@@ -75,12 +77,12 @@ describe('Features Module', () => {
 
   describe('Feature 5: Heatmap', () => {
     it('generates HEATMAP_DAYS cells', () => {
-      expect(socialSource).toContain('HEATMAP_DAYS');
+      expect(heatmapSource).toContain('HEATMAP_DAYS');
     });
 
     it('tracks current and max streak', () => {
-      expect(socialSource).toContain('maxStreak');
-      expect(socialSource).toContain('currentStreak');
+      expect(heatmapSource).toContain('maxStreak');
+      expect(heatmapSource).toContain('currentStreak');
     });
   });
 
