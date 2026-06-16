@@ -42,7 +42,7 @@ const envReplacements = {
   '__FIREBASE_MESSAGING_SENDER_ID__': process.env.FIREBASE_MESSAGING_SENDER_ID || '',
   '__FIREBASE_APP_ID__': process.env.FIREBASE_APP_ID || '',
   '__MAPS_API_KEY__': process.env.MAPS_API_KEY || '',
-  '__GEMINI_API_KEY__': process.env.GEMINI_API_KEY || '',
+  '__GEMINI_PROXY_ENDPOINT__': process.env.GEMINI_PROXY_ENDPOINT || '',
   '__SEARCH_API_KEY__': process.env.SEARCH_API_KEY || '',
   '__SEARCH_CX__': process.env.SEARCH_CX || '',
 };

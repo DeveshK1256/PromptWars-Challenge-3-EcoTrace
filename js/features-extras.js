@@ -50,7 +50,13 @@ const FOOTPRINT_KEY = "lastFootprintKg";
 export function initOffsetVisualizer() {
   const el = document.querySelector("[data-offset-viz]");
   if (!el) return;
-  const kg = Number(localStorage.getItem(FOOTPRINT_KEY)) || DEFAULT_FOOTPRINT_KG;
+  let kg = Number(localStorage.getItem(FOOTPRINT_KEY)) || 0;
+  if (!kg) {
+    const cached = JSON.parse(localStorage.getItem('eco-activities-cache') || '[]');
+    const latest = cached.filter(a => a.co2Kg > 0).pop();
+    if (latest) kg = Number(latest.co2Kg);
+  }
+  if (!kg) kg = DEFAULT_FOOTPRINT_KG;
   const offsets = [
     { emoji: "🌳", value: Math.ceil(kg / KG_PER_TREE), label: "Trees needed for 1 year" },
     { emoji: "☀️", value: Math.ceil(kg / KG_PER_SOLAR_PANEL), label: "Solar panels for 1 year" },

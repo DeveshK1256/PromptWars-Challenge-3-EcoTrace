@@ -51,10 +51,9 @@ export const ECO_CONFIG = Object.freeze({
     customSearchCx: envOrDefault(ENV.SEARCH_CX, "c4c9a158f97f447e0"),
   },
   gemini: {
-    // Production recommendation: set geminiProxyEndpoint to a Firebase Function
-    // and keep the Gemini key server-side. geminiApiKey is for local demos only.
-    proxyEndpoint: "",
-    apiKey: envOrDefault(ENV.GEMINI_API_KEY, "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk"),
+    // Gemini requests go through a server-side proxy that holds the API key.
+    // Never expose the Gemini key in client-side code.
+    proxyEndpoint: envOrDefault(ENV.GEMINI_PROXY_ENDPOINT, ""),
     model: "gemini-2.0-flash-lite",
   },
   app: {
@@ -101,5 +100,5 @@ export function hasSearchConfig() {
  * @returns {boolean} `true` if a proxy endpoint or API key is available.
  */
 export function hasGeminiConfig() {
-  return Boolean(ECO_CONFIG.gemini.proxyEndpoint || ECO_CONFIG.gemini.apiKey);
+  return Boolean(ECO_CONFIG.gemini.proxyEndpoint);
 }

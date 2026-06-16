@@ -1,7 +1,7 @@
 # EcoTrace — Firebase Cloud Functions
 
 Server-side functions that power EcoTrace's backend: a leaderboard
-aggregator, footprint push notifications, and a Gemini AI proxy.
+aggregator, footprint notification support (server-side prepared), and a Gemini AI proxy.
 
 ## Prerequisites
 
@@ -65,7 +65,7 @@ The function reads the key at runtime via `process.env.GEMINI_API_KEY`.
 | Function | Trigger | Description |
 |----------|---------|-------------|
 | `aggregateLeaderboard` | Scheduled — daily at 00:00 UTC | Snapshots `publicProfiles` → `leaderboardCache/latest`. |
-| `onFootprintCreated` | Firestore — `users/{uid}/footprints/{id}` create | Sends an FCM push notification with the new footprint result. |
+| `onFootprintCreated` | Firestore — `users/{uid}/footprints/{id}` create | Sends a footprint alert notification (server-side ready, client token registration not yet wired). |
 | `geminiProxy` | HTTPS (POST, CORS) | Proxies calls to the Gemini API to keep the API key server-side. Includes per-IP rate limiting (10 s). |
 
 ## CI / CD

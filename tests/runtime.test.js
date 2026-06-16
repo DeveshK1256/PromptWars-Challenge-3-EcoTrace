@@ -131,24 +131,24 @@ describe('Config Runtime', () => {
     expect(Object.isFrozen(ECO_CONFIG)).toBe(true);
   });
 
-  it('hasFirebaseConfig returns boolean', async () => {
+  it('hasFirebaseConfig returns true when all keys present', async () => {
     const { hasFirebaseConfig } = await import('../js/config.js');
-    expect(typeof hasFirebaseConfig()).toBe('boolean');
+    expect(hasFirebaseConfig()).toBe(true);
   });
 
-  it('hasMapsConfig returns boolean', async () => {
+  it('hasMapsConfig returns true when maps API key is present', async () => {
     const { hasMapsConfig } = await import('../js/config.js');
-    expect(typeof hasMapsConfig()).toBe('boolean');
+    expect(hasMapsConfig()).toBe(true);
   });
 
-  it('hasGeminiConfig returns boolean', async () => {
+  it('hasGeminiConfig returns false without proxy endpoint', async () => {
     const { hasGeminiConfig } = await import('../js/config.js');
-    expect(typeof hasGeminiConfig()).toBe('boolean');
+    expect(hasGeminiConfig()).toBe(false);
   });
 
-  it('hasSearchConfig returns boolean', async () => {
+  it('hasSearchConfig returns true when customSearchCx is configured', async () => {
     const { hasSearchConfig } = await import('../js/config.js');
-    expect(typeof hasSearchConfig()).toBe('boolean');
+    expect(hasSearchConfig()).toBe(true);
   });
 
   it('ECO_CONFIG.app has expected numeric constants', async () => {

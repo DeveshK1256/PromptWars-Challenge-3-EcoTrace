@@ -100,7 +100,7 @@
 │              Firebase Cloud Functions (scaffolded)            │
 │                                                              │
 │  functions/index.js ─── Leaderboard aggregation (scheduled)  │
-│                         Footprint FCM notifications          │
+│                         Footprint alerts (server-side ready)  │
 │                         Gemini proxy (HTTPS callable)         │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -193,7 +193,7 @@ EcoTrace/
 │   └── navigation.spec.js      # 8-page smoke tests + skip links
 │
 ├── functions/                  # Firebase Cloud Functions (scaffolded)
-│   ├── index.js                # Leaderboard aggregation + FCM + Gemini proxy
+│   ├── index.js                # Leaderboard aggregation + notification support (server-side prepared) + Gemini proxy
 │   ├── package.json            # firebase-admin + firebase-functions
 │   └── .eslintrc.json          # Node.js ESLint config
 │
@@ -349,7 +349,7 @@ GitHub Actions: lint → test → build → Lighthouse CI → E2E (on PRs)
 | **Firebase Auth** | Google OAuth + Email/Password + Password Reset | Demo mode with localStorage accounts |
 | **Cloud Firestore** | User profiles, footprints, activities, leaderboard | localStorage with full feature parity |
 | **Firebase App Check** | reCAPTCHA Enterprise — blocks unauthorized clients | Graceful degradation |
-| **Firebase Functions** | Leaderboard aggregation, FCM notifications, Gemini proxy | Netlify Functions fallback |
+| **Firebase Functions** | Leaderboard aggregation, notification support (server-side prepared), Gemini proxy | Netlify Functions fallback |
 | **Google Maps + Places** | Green spots map with category search | Demo markers with offset coordinates |
 | **Gemini 2.0 Flash Lite** | Personalised eco tips + EcoBot chatbot | 7 curated fallback tips |
 | **Google Custom Search** | Live environmental news feed | 31 curated global articles |

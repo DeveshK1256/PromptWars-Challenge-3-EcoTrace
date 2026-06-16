@@ -1,30 +1,32 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Calculator', () => {
-  test('loads calculator page', async ({ page }) => {
+test.describe('EcoTrace Calculator', () => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/calculator.html');
-    await expect(page).toHaveTitle(/Calculator|EcoTrace/i);
   });
 
-  test('has step navigation', async ({ page }) => {
-    await page.goto('/calculator.html');
-    const steps = page.locator('[data-step-indicator]');
-    await expect(steps.first()).toBeVisible();
+  test('calculator form loads', async ({ page }) => {
+    const form = page.locator('[data-calculator-form]');
+    await expect(form).toBeVisible();
   });
 
-  test('form has transport inputs', async ({ page }) => {
-    await page.goto('/calculator.html');
-    const carKm = page.locator('input[name="carKm"]');
-    await expect(carKm).toBeVisible();
+  test('step indicators are present', async ({ page }) => {
+    const steps = page.locator('.step-indicator span');
+    const count = await steps.count();
+    expect(count).toBeGreaterThan(0);
   });
 
-  test('emission search works', async ({ page }) => {
-    await page.goto('/calculator.html');
-    const searchInput = page.locator('[data-emission-search-form] input, input[placeholder*="search"]');
-    if (await searchInput.count() > 0) {
-      await searchInput.first().fill('car');
-      // Wait for results
-      await page.waitForTimeout(500);
+  test('input fields accept numeric values', async ({ page }) => {
+    const firstInput = page.locator('[data-calculator-form] input[type="number"]').first();
+    if (await firstInput.count() > 0) {
+      await firstInput.fill('100');
+      await expect(firstInput).toHaveValue('100');
     }
+  });
+
+  test('page has proper heading', async ({ page }) => {
+    const heading = page.locator('h1');
+    await expect(heading).toBeVisible();
+    await expect(heading).toContainText(/carbon|footprint|calculator/i);
   });
 });

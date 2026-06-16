@@ -344,6 +344,15 @@ function initCalculator() {
       renderScore();
       await ecoService.saveFootprint(appState.user, latestResult);
       sessionStorage.setItem("ecotrace.latestProfile", JSON.stringify(latestResult));
+      localStorage.setItem("lastFootprintKg", String(latestResult.totalKg));
+      // Also add to activities cache so the heatmap picks it up
+      const activities = JSON.parse(localStorage.getItem('eco-activities-cache') || '[]');
+      activities.push({
+        createdAt: new Date().toISOString(),
+        co2Kg: latestResult.totalKg,
+        type: 'calculator',
+      });
+      localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
       showToast("Footprint result saved.");
     } catch (error) {
       logError('calculator', error);

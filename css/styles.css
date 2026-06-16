@@ -1638,6 +1638,10 @@ textarea:focus-visible {
     font-size: 0;
   }
 
+  .step-indicator span {
+    font-size: 0.85rem;
+  }
+
   .comparison-row {
     grid-template-columns: 82px 1fr 62px;
   }
@@ -2364,6 +2368,34 @@ textarea:focus-visible {
   background: var(--forest);
   color: #fff;
   transform: scale(1.08);
+}
+[data-reduced-motion] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+[data-reduced-motion]:hover {
+  background: var(--forest);
+  color: #fff;
+  transform: scale(1.08);
+}
+[data-reduced-motion][aria-pressed="true"] {
+  background: var(--forest);
+  color: #fff;
+}
+[data-theme="dark"] [data-reduced-motion] {
+  background: var(--surface-strong);
+  border-color: var(--line);
 }
 
 /* ===== 2. EARTH VITALS TICKER ===== */

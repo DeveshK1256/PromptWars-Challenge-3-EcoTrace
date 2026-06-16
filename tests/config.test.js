@@ -25,9 +25,8 @@ describe("ECO_CONFIG structure", () => {
     expect(typeof ECO_CONFIG.google.mapsApiKey).toBe("string");
   });
 
-  it("has gemini section with apiKey and model", () => {
+  it("has gemini section with model", () => {
     expect(ECO_CONFIG.gemini).toBeDefined();
-    expect(typeof ECO_CONFIG.gemini.apiKey).toBe("string");
     expect(typeof ECO_CONFIG.gemini.model).toBe("string");
   });
 
@@ -56,43 +55,25 @@ describe("ECO_CONFIG structure", () => {
 });
 
 describe("hasFirebaseConfig", () => {
-  it("returns a boolean", () => {
-    expect(typeof hasFirebaseConfig()).toBe("boolean");
-  });
-
-  it("returns true when all required Firebase keys are present", () => {
-    // Current config has all keys filled
+  it("returns true when all keys present", () => {
     expect(hasFirebaseConfig()).toBe(true);
   });
 });
 
 describe("hasMapsConfig", () => {
-  it("returns a boolean", () => {
-    expect(typeof hasMapsConfig()).toBe("boolean");
-  });
-
   it("returns true when maps API key is present", () => {
     expect(hasMapsConfig()).toBe(true);
   });
 });
 
 describe("hasSearchConfig", () => {
-  it("returns a boolean", () => {
-    expect(typeof hasSearchConfig()).toBe("boolean");
-  });
-
   it("returns true when customSearchCx is configured", () => {
-    // Current config has customSearchCx set
     expect(hasSearchConfig()).toBe(true);
   });
 });
 
 describe("hasGeminiConfig", () => {
-  it("returns a boolean", () => {
-    expect(typeof hasGeminiConfig()).toBe("boolean");
-  });
-
-  it("returns true when Gemini API key is present", () => {
-    expect(hasGeminiConfig()).toBe(true);
+  it("returns false without proxy endpoint", () => {
+    expect(hasGeminiConfig()).toBe(false);
   });
 });

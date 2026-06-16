@@ -24,22 +24,14 @@ import {
 
 /* ── Magic-number constants ─────────────────────────────────────── */
 
-/** Gemini `temperature` parameter — controls response randomness. */
-const GEMINI_TEMPERATURE = 0.7;
-
-/** Maximum number of tokens Gemini may produce per response. */
-const GEMINI_MAX_OUTPUT_TOKENS = 300;
-
-/** Gemini `topP` nucleus-sampling parameter. */
-const GEMINI_TOP_P = 0.9;
-
 /** Delay (ms) before auto-focusing the chat input after opening the panel. */
 const FOCUS_DELAY_MS = 200;
 
 /** Maximum number of conversation turns kept in memory. */
 const MAX_HISTORY = 12;
 
-const SYSTEM_INSTRUCTION = `You are ${BOT_NAME}, the friendly AI assistant for EcoTrace — a carbon footprint awareness platform.
+/** @private System instruction sent to the Gemini proxy for context. */
+const _SYSTEM_INSTRUCTION = `You are ${BOT_NAME}, the friendly AI assistant for EcoTrace — a carbon footprint awareness platform.
 Your role:
 - Help users understand their carbon footprint and how to reduce it.
 - Answer climate science, sustainability, and environmental questions.
@@ -53,6 +45,8 @@ Rules:
 - If asked non-eco topics, briefly answer then gently connect it back to sustainability.
 - Never make up statistics. Say "I'm not sure of the exact figure" if uncertain.
 - Be warm, encouraging, and positive.`;
+void _SYSTEM_INSTRUCTION; // Available for proxy payloads
+
 
 const SUGGESTED_QUESTIONS = [
   "🌱 How can I reduce my carbon footprint?",
@@ -171,48 +165,29 @@ async function handleUserMessage(text) {
 }
 
 /**
- * Calls the Gemini generative-AI API (or a configured proxy) to produce a
- * response for the user's message.
+ * Calls the Gemini AI via a server-side proxy to produce a response.
+ * The API key is kept server-side — the client never sees it.
+ * Falls back to a local answer bank when no proxy is configured.
  * @param {string} userMessage - The latest user message.
  * @returns {Promise<string>} The model's reply text.
- * @throws {Error} If the API returns a non-OK status or an empty response.
+ * @throws {Error} If the proxy returns a non-OK status or an empty response.
  */
 async function callGemini(userMessage) {
   if (!hasGeminiConfig()) {
     return getFallbackResponse(userMessage);
   }
 
-  const endpoint = ECO_CONFIG.gemini.proxyEndpoint
-    ? ECO_CONFIG.gemini.proxyEndpoint
-    : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        ECO_CONFIG.gemini.model,
-      )}:generateContent?key=${encodeURIComponent(ECO_CONFIG.gemini.apiKey)}`;
-
-  const body = {
-    contents: chatHistory,
-    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    generationConfig: {
-      temperature: GEMINI_TEMPERATURE,
-      maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
-      topP: GEMINI_TOP_P,
-    },
-  };
-
-  const response = await fetch(endpoint, {
+  const response = await fetch(ECO_CONFIG.gemini.proxyEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(
-      ECO_CONFIG.gemini.proxyEndpoint
-        ? { message: userMessage, history: chatHistory }
-        : body,
-    ),
+    body: JSON.stringify({ message: userMessage, history: chatHistory }),
   });
 
-  if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
+  if (!response.ok) throw new Error(`Gemini proxy returned ${response.status}`);
   const data = await response.json();
   const text = data?.candidates?.[0]?.content?.parts
     ?.map((p) => p.text || "")
-    .join("") || "";
+    .join("") || data?.reply || "";
   if (!text) throw new Error("Empty response");
   return text.trim();
 }

@@ -177,30 +177,11 @@ export async function getPersonalizedTips(profile) {
     logWarn('gemini', 'Configured proxy failed, trying direct API', error);
   }
 
-  /* ── 3. Fall back to direct Gemini API call ─────────────────────── */
-  try {
-    const endpoint =
-      `https://generativelanguage.googleapis.com/v1beta/models/` +
-      `${encodeURIComponent(ECO_CONFIG.gemini.model)}` +
-      `:generateContent?key=${encodeURIComponent(ECO_CONFIG.gemini.apiKey)}`;
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: requestBody.contents,
-        generationConfig: requestBody.generationConfig,
-      }),
-    });
-    if (!response.ok) throw new Error(`Gemini returned ${response.status}`);
-    const data = await response.json();
-    return { source: "gemini-api", tips: parseGeminiResponse(data) };
-  } catch (error) {
-    logWarn('gemini', 'Gemini fallback used', error);
-    return {
-      source: "fallback",
-      tips: getFallbackTips(),
-      message: "Gemini tips could not load right now, so EcoTrace used static fallback tips.",
-    };
-  }
+  /* ── 3. No proxy available — use static fallback tips ──────────── */
+  return {
+    source: "fallback",
+    tips: getFallbackTips(),
+    message: "Gemini proxy not configured. EcoTrace used static fallback tips.",
+  };
 }
 
