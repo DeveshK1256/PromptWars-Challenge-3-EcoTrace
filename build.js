@@ -4,8 +4,22 @@
  * Output: dist/ folder with minified assets.
  */
 import { build } from "esbuild";
-import { cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+
+/* ── Load .env file if present (keeps keys out of source code) ──── */
+if (existsSync(".env")) {
+  for (const line of readFileSync(".env", "utf-8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq > 0) {
+      const key = trimmed.slice(0, eq).trim();
+      const val = trimmed.slice(eq + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+}
 
 const DIST = "dist";
 
