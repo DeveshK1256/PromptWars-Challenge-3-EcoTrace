@@ -18,10 +18,9 @@ test.describe('EcoTrace Calculator', () => {
 
   test('input fields accept numeric values', async ({ page }) => {
     const firstInput = page.locator('[data-calculator-form] input[type="number"]').first();
-    if (await firstInput.count() > 0) {
-      await firstInput.fill('100');
-      await expect(firstInput).toHaveValue('100');
-    }
+    await expect(firstInput).toBeVisible();
+    await firstInput.fill('100');
+    await expect(firstInput).toHaveValue('100');
   });
 
   test('page has proper heading', async ({ page }) => {

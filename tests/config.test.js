@@ -55,25 +55,25 @@ describe("ECO_CONFIG structure", () => {
 });
 
 describe("hasFirebaseConfig", () => {
-  it("returns true when all keys present", () => {
-    expect(hasFirebaseConfig()).toBe(true);
+  it("returns false without env vars", () => {
+    expect(hasFirebaseConfig()).toBe(false);
   });
 });
 
 describe("hasMapsConfig", () => {
-  it("returns true when maps API key is present", () => {
-    expect(hasMapsConfig()).toBe(true);
+  it("returns false without env vars", () => {
+    expect(hasMapsConfig()).toBe(false);
   });
 });
 
 describe("hasSearchConfig", () => {
-  it("returns true when customSearchCx is configured", () => {
-    expect(hasSearchConfig()).toBe(true);
+  it("returns false without env vars", () => {
+    expect(hasSearchConfig()).toBe(false);
   });
 });
 
 describe("hasGeminiConfig", () => {
-  it("returns false without proxy endpoint", () => {
-    expect(hasGeminiConfig()).toBe(false);
+  it("returns true with default proxy endpoint", () => {
+    expect(hasGeminiConfig()).toBe(true);
   });
 });

@@ -36,24 +36,24 @@ function envOrDefault(envValue, defaultValue) {
  */
 export const ECO_CONFIG = Object.freeze({
   firebase: {
-    apiKey: envOrDefault(ENV.FIREBASE_API_KEY, "AIzaSyB8GMt2jIAZcn3r-mfQAT6I_vxS77AnJnk"),
-    authDomain: envOrDefault(ENV.FIREBASE_AUTH_DOMAIN, "psyched-metrics-469316-u1.firebaseapp.com"),
-    projectId: envOrDefault(ENV.FIREBASE_PROJECT_ID, "psyched-metrics-469316-u1"),
-    storageBucket: envOrDefault(ENV.FIREBASE_STORAGE_BUCKET, "psyched-metrics-469316-u1.firebasestorage.app"),
-    messagingSenderId: envOrDefault(ENV.FIREBASE_MESSAGING_SENDER_ID, "1034904942068"),
-    appId: envOrDefault(ENV.FIREBASE_APP_ID, "1:1034904942068:web:380a4112d8ea683b5735a1"),
+    apiKey: envOrDefault(ENV.FIREBASE_API_KEY, ""),
+    authDomain: envOrDefault(ENV.FIREBASE_AUTH_DOMAIN, ""),
+    projectId: envOrDefault(ENV.FIREBASE_PROJECT_ID, ""),
+    storageBucket: envOrDefault(ENV.FIREBASE_STORAGE_BUCKET, ""),
+    messagingSenderId: envOrDefault(ENV.FIREBASE_MESSAGING_SENDER_ID, ""),
+    appId: envOrDefault(ENV.FIREBASE_APP_ID, ""),
     recaptchaSiteKey: envOrDefault(ENV.RECAPTCHA_SITE_KEY, ''),
   },
   google: {
-    mapsApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
-    placesApiKey: envOrDefault(ENV.MAPS_API_KEY, "AIzaSyBZ67EkCb_bK6KsqJAZGOH1PbPE0sztYnI"),
-    customSearchApiKey: envOrDefault(ENV.SEARCH_API_KEY, "AIzaSyDq6RlIaCJ-nRTt-NZ6JOejR0j_5OMFtao"),
+    mapsApiKey: envOrDefault(ENV.MAPS_API_KEY, ""),
+    placesApiKey: envOrDefault(ENV.MAPS_API_KEY, ""),
+    customSearchApiKey: envOrDefault(ENV.SEARCH_API_KEY, ""),
     customSearchCx: envOrDefault(ENV.SEARCH_CX, "c4c9a158f97f447e0"),
   },
   gemini: {
     // Gemini requests go through a server-side proxy that holds the API key.
     // Never expose the Gemini key in client-side code.
-    proxyEndpoint: envOrDefault(ENV.GEMINI_PROXY_ENDPOINT, ""),
+    proxyEndpoint: envOrDefault(ENV.GEMINI_PROXY_ENDPOINT, "/.netlify/functions/gemini"),
     model: "gemini-2.0-flash-lite",
   },
   app: {
