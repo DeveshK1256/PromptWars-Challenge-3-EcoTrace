@@ -58,23 +58,26 @@
 └──────────────────┬───────────────────────────────────────────┘
                    │ ES Modules (import/export)
 ┌──────────────────┴───────────────────────────────────────────┐
-│               23 JavaScript Modules                          │
+│               31 JavaScript Modules                          │
 │                                                              │
-│  Core ──────── app.js · app-auth.js · config.js ·            │
-│                config.env.js · logger.js                     │
+│  Core ──────── app.js · app-auth.js · app-ui.js ·            │
+│                config.js · config.env.js · logger.js         │
 │                                                              │
-│  Services ──── firebase.js · demo-store.js · gemini.js       │
+│  Services ──── firebase.js · firebase-auth.js ·              │
+│                demo-store.js · gemini.js                     │
 │                                                              │
 │  Data ──────── data.js · data-countries.js ·                 │
 │                emission-factors.js                            │
 │                                                              │
-│  Features ──── features.js · features-social.js ·            │
-│                chatbot.js                                     │
+│  Features ──── features.js · features-extras.js ·            │
+│                features-social.js · heatmap.js ·             │
+│                chatbot.js · chatbot-ui.js                    │
 │                                                              │
 │  Pages ─────── calculator.js · dashboard.js ·                │
 │                dashboard-charts.js · tips.js · map.js ·      │
-│                map-search.js · challenges.js · feed.js ·     │
-│                profile.js                                     │
+│                map-ui.js · map-helpers.js ·                  │
+│                map-search.js · map-search-ui.js ·            │
+│                challenges.js · feed.js · profile.js          │
 └──────────────────┬───────────────────────────────────────────┘
                    │
 ┌──────────────────┴───────────────────────────────────────────┐
@@ -119,9 +122,9 @@
 | **Search** | Google Custom Search API |
 | **Fonts** | Google Fonts (Inter, Space Grotesk, Outfit) |
 | **Server** | Netlify Functions (Gemini proxy) + Firebase Functions |
-| **Build** | esbuild (JS/CSS minification, 48% size reduction) |
-| **Unit Testing** | Vitest (383 tests, 12 suites) + jsdom |
-| **E2E Testing** | Playwright (16 tests, Desktop Chrome + Mobile Safari) |
+| **Build** | esbuild (bundle + code splitting + minification, 38% reduction) |
+| **Unit Testing** | Vitest (464 tests, 14 suites) + jsdom |
+| **E2E Testing** | Playwright (10 tests, Desktop Chrome + Mobile Safari) |
 | **Performance** | Lighthouse CI (`lhci autorun`, score thresholds) |
 | **Linting** | ESLint (19 rules, flat config, 0 errors) |
 | **Formatting** | Prettier + EditorConfig |
@@ -146,41 +149,51 @@ EcoTrace/
 ├── css/
 │   └── styles.css              # Complete design system (~2,500 lines)
 │
-├── js/                         # 23 ES modules (avg 294 lines/file)
+├── js/                         # 31 ES modules
 │   ├── app.js                  # Core logic, navigation, utilities
 │   ├── app-auth.js             # Authentication UI handlers
+│   ├── app-ui.js               # DOM-based auth and navigation utilities
 │   ├── config.js               # Frozen config + feature flags
 │   ├── config.env.js           # Build-time env var placeholders
 │   ├── logger.js               # Centralised logging utility
 │   ├── firebase.js             # Service layer (Firebase + demo fallback)
+│   ├── firebase-auth.js        # Firebase authentication methods
 │   ├── demo-store.js           # Demo-mode localStorage helpers
-│   ├── gemini.js               # Gemini AI integration (3-tier fallback)
+│   ├── gemini.js               # Gemini AI integration (proxy-only)
 │   ├── data.js                 # Static reference data
 │   ├── data-countries.js       # Country emissions dataset
 │   ├── emission-factors.js     # Searchable emission factor database
-│   ├── features.js             # Dark mode, time machine, ambient sounds
-│   ├── features-social.js      # Heatmap, share card, pledge wall
+│   ├── features.js             # Dark mode, time machine, comparisons
+│   ├── features-extras.js      # Offset visualizer, ambient sounds
+│   ├── features-social.js      # Share card, pledge wall
+│   ├── heatmap.js              # Eco Streak Heatmap (365-day grid)
 │   ├── chatbot.js              # EcoBot AI chatbot widget
+│   ├── chatbot-ui.js           # Chatbot DOM rendering
 │   ├── calculator.js           # Footprint calculator logic
 │   ├── dashboard.js            # Dashboard rendering + CSV export
 │   ├── dashboard-charts.js     # Chart.js + canvas fallback charts
 │   ├── map.js                  # Google Maps UI
+│   ├── map-ui.js               # Map DOM rendering helpers
+│   ├── map-helpers.js          # Map constants + script loader
 │   ├── map-search.js           # Geocoding + Places search logic
+│   ├── map-search-ui.js        # Search result rendering
 │   ├── tips.js                 # Tips page controller
 │   ├── challenges.js           # Challenges + gamification
 │   ├── feed.js                 # News feed controller
 │   └── profile.js              # Profile management
 │
-├── tests/                      # 383 unit tests (Vitest)
+├── tests/                      # 464 unit tests (Vitest)
 │   ├── accessibility.test.js   # 37 tests — ARIA, skip links, contrast
-│   ├── code-quality.test.js    # 153 tests — JSDoc, constants, modules
+│   ├── code-quality.test.js    # 153+ tests — JSDoc, constants, modules
 │   ├── data.test.js            # 38 tests — Data integrity + validation
 │   ├── security.test.js        # 30 tests — Firestore rules + headers
 │   ├── features.test.js        # 19 tests — 9 features validation
 │   ├── gemini.test.js          # 18 tests — AI response parsing
 │   ├── calculator.test.js      # 16 tests — Emission factors + logic
 │   ├── config.test.js          # 15 tests — Config structure + flags
+│   ├── runtime.test.js         # 56 tests — Module imports + runtime checks
 │   ├── utils.test.js           # 31 tests — Utility functions
+│   ├── dom.test.js             # 12 tests — DOM utilities (jsdom)
 │   ├── dom/                    # jsdom-based DOM tests
 │   │   ├── dom.test.js         # 11 tests — DOM manipulation
 │   │   ├── calculator.test.js  # 12 tests — Calculator UI interactions
@@ -227,12 +240,13 @@ EcoTrace/
 
 ### Metrics
 ```
-JS modules:     23 files (avg 294 lines/file)
-Total lines:    ~6,750 (JS) + ~2,500 (CSS)
-Build size:     159 KB minified (48% reduction)
-JSDoc:          445 annotations (@module on 100% of files)
-Named constants: 113 UPPER_CASE constants
+JS modules:     31 files (all under 400 lines of logic)
+Total lines:    ~7,200 (JS) + ~2,500 (CSS)
+Build size:     202 KB (bundled + code-split + minified, 38% reduction)
+JSDoc:          @module on 100% of files, @param/@returns on all functions
+Named constants: 113+ UPPER_CASE constants
 ESLint:         0 errors, 0 warnings (19 rules)
+Tests:          464 passing across 14 suites
 ```
 
 ### Standards
@@ -250,10 +264,10 @@ ESLint:         0 errors, 0 warnings (19 rules)
 
 ## 🧪 Testing
 
-**383 automated tests** across 12 test suites + 16 E2E tests + 33 manual scenarios:
+**464 automated tests** across 14 test suites + 10 E2E tests + 33 manual scenarios:
 
 ```bash
-npm test              # Run all 383 unit tests
+npm test              # Run all 464 unit tests
 npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report (70% branch threshold)
 npm run lint          # ESLint check
@@ -370,17 +384,17 @@ cp .env.example .env
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_FIREBASE_API_KEY` | Firebase Web API key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth domain |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage bucket URL |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Cloud Messaging sender ID |
-| `VITE_FIREBASE_APP_ID` | Firebase app ID |
-| `VITE_MAPS_API_KEY` | Google Maps / Places API key |
-| `VITE_GEMINI_KEY` | Google Gemini AI API key |
-| `VITE_GOOGLE_SEARCH_KEY` | Google Custom Search API key |
-| `VITE_GOOGLE_SEARCH_CX` | Google Custom Search engine ID |
-| `VITE_RECAPTCHA_SITE_KEY` | reCAPTCHA v3 site key (optional) |
+| `FIREBASE_API_KEY` | Firebase Web API key |
+| `FIREBASE_AUTH_DOMAIN` | Firebase Auth domain |
+| `FIREBASE_PROJECT_ID` | Firebase project ID |
+| `FIREBASE_STORAGE_BUCKET` | Firebase Storage bucket URL |
+| `FIREBASE_MESSAGING_SENDER_ID` | Firebase Cloud Messaging sender ID |
+| `FIREBASE_APP_ID` | Firebase app ID |
+| `MAPS_API_KEY` | Google Maps / Places API key |
+| `GEMINI_PROXY_ENDPOINT` | Server-side Gemini proxy URL |
+| `SEARCH_API_KEY` | Google Custom Search API key |
+| `SEARCH_CX` | Google Custom Search engine ID |
+| `RECAPTCHA_SITE_KEY` | reCAPTCHA v3 site key (optional) |
 
 > See [`.env.example`](.env.example) for the full template.
 
@@ -398,7 +412,7 @@ git clone https://github.com/DeveshK1256/PromptWars-Challenge-3-EcoTrace.git
 cd PromptWars-Challenge-3-EcoTrace
 cp .env.example .env          # Configure your API keys
 npm install
-npm test                      # 383 unit tests
+npm test                      # 464 unit tests
 npm run lint                  # 0 errors
 ```
 
