@@ -6,8 +6,19 @@
 const CACHE_NAME = "ecotrace-v1";
 
 const PRECACHE_URLS = [
+  "/",
+  "/index.html",
+  "/calculator.html",
+  "/dashboard.html",
+  "/tips.html",
+  "/map.html",
+  "/profile.html",
+  "/feed.html",
+  "/challenges.html",
   "/css/styles.css",
   "/favicon.png",
+  "/js/app.js",
+  "/js/config.js",
 ];
 
 // Install: precache critical assets

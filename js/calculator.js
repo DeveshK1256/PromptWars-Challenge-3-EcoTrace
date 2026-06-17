@@ -34,6 +34,27 @@ let activeStep = FIRST_STEP;
 /** @type {Object|undefined} Most recent calculation result. */
 let latestResult;
 
+/** @type {number} Debounce delay (ms) for live score recalculation. */
+const DEBOUNCE_SCORE_MS = 150;
+
+/** @type {number} Debounce delay (ms) for emission factor search. */
+const DEBOUNCE_SEARCH_MS = 200;
+
+/**
+ * Creates a debounced version of the given function that delays invocation
+ * until `delay` milliseconds have elapsed since the last call.
+ * @param {Function} fn - The function to debounce.
+ * @param {number} delay - Delay in milliseconds.
+ * @returns {Function} The debounced wrapper.
+ */
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 /**
  * Extracts a non-negative number from a FormData object.
  * @param {FormData} data - The FormData instance to read from.
@@ -314,8 +335,9 @@ function renderEmissionSearchResults(query = "") {
  */
 function initCalculator() {
   if (!form) return;
-  form.addEventListener("input", renderScore);
-  form.addEventListener("change", renderScore);
+  const debouncedScore = debounce(renderScore, DEBOUNCE_SCORE_MS);
+  form.addEventListener("input", debouncedScore);
+  form.addEventListener("change", debouncedScore);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     showResults();
@@ -384,9 +406,9 @@ function initCalculator() {
     renderEmissionSearchResults(query);
   });
 
-  emissionSearchForm?.querySelector("input[type='search']")?.addEventListener("input", (event) => {
+  emissionSearchForm?.querySelector("input[type='search']")?.addEventListener("input", debounce((event) => {
     renderEmissionSearchResults(event.currentTarget.value.trim());
-  });
+  }, DEBOUNCE_SEARCH_MS));
 
   renderStep();
   renderScore();

@@ -8,6 +8,27 @@
 let breakdownChart;
 let trendChart;
 
+/** @type {Promise<void>|null} Cached Chart.js loading promise. */
+let chartJsPromise = null;
+
+/**
+ * Dynamically loads Chart.js from CDN on first use.
+ * Returns immediately if already loaded (window.Chart exists).
+ * @returns {Promise<void>} Resolves when Chart.js is ready.
+ */
+async function loadChartJs() {
+  if (window.Chart) return;
+  if (chartJsPromise) return chartJsPromise;
+  chartJsPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Chart.js'));
+    document.head.append(script);
+  });
+  return chartJsPromise;
+}
+
 /**
  * Builds a visually-hidden data table summarising chart data for screen readers.
  * @param {string} caption - Table caption.
@@ -187,9 +208,10 @@ function drawFallbackLine(canvas, footprints) {
  * @param {Object|undefined} latest - The most recent footprint result with a `breakdown` property.
  * @returns {void}
  */
-function renderBreakdownChart(latest) {
+async function renderBreakdownChart(latest) {
   const canvas = document.getElementById("breakdownChart");
   if (!canvas || !latest?.breakdown) return;
+  try { await loadChartJs(); } catch { /* fall through to fallback */ }
   if (!window.Chart) {
     drawFallbackDonut(canvas, latest);
     return;
@@ -230,10 +252,12 @@ function renderBreakdownChart(latest) {
     latest.breakdown.energy || 0,
     latest.breakdown.shopping || 0,
   ];
+  const breakdownTableId = 'breakdown-data-table';
+  const dataTable = buildChartDataTable('Carbon footprint breakdown', chartLabels, chartValues, 'kg CO\u2082');
+  dataTable.id = breakdownTableId;
+  canvas.setAttribute('aria-describedby', breakdownTableId);
   canvas.parentElement?.querySelector('.sr-only')?.remove();
-  canvas.parentElement?.append(
-    buildChartDataTable('Carbon footprint breakdown', chartLabels, chartValues, 'kg CO\u2082')
-  );
+  canvas.parentElement?.append(dataTable);
 }
 
 /**
@@ -242,9 +266,10 @@ function renderBreakdownChart(latest) {
  * @param {Array<Object>} footprints - Sorted footprint records (newest first).
  * @returns {void}
  */
-function renderTrendChart(footprints) {
+async function renderTrendChart(footprints) {
   const canvas = document.getElementById("trendChart");
   if (!canvas) return;
+  try { await loadChartJs(); } catch { /* fall through to fallback */ }
   if (!window.Chart) {
     drawFallbackLine(canvas, footprints);
     return;
@@ -288,10 +313,12 @@ function renderTrendChart(footprints) {
     new Intl.DateTimeFormat('en-IN', { month: 'short' }).format(new Date(item.date || item.createdAt)),
   );
   const trendValues = chronological.map((item) => item.totalKg);
+  const trendTableId = 'trend-data-table';
+  const trendTable = buildChartDataTable('Carbon footprint trend', trendLabels, trendValues, 'kg CO\u2082/year');
+  trendTable.id = trendTableId;
+  canvas.setAttribute('aria-describedby', trendTableId);
   canvas.parentElement?.querySelector('.sr-only')?.remove();
-  canvas.parentElement?.append(
-    buildChartDataTable('Carbon footprint trend', trendLabels, trendValues, 'kg CO\u2082/year')
-  );
+  canvas.parentElement?.append(trendTable);
 }
 
 export { drawFallbackDonut, drawFallbackLine, renderBreakdownChart, renderTrendChart };

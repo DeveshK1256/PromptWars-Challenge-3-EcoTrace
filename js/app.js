@@ -184,4 +184,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }
+
+  // Marquee pause/play toggle
+  const pauseBtn = document.querySelector("[data-marquee-pause]");
+  if (pauseBtn) {
+    pauseBtn.addEventListener("click", () => {
+      const wrapper = document.querySelector(".marquee-wrapper");
+      if (!wrapper) return;
+      const isPaused = wrapper.classList.toggle("marquee-paused");
+      const icon = document.createElement("i");
+      icon.className = isPaused ? "fa-solid fa-play" : "fa-solid fa-pause";
+      icon.setAttribute("aria-hidden", "true");
+      pauseBtn.replaceChildren(icon, ` ${isPaused ? "Play" : "Pause"}`);
+      pauseBtn.setAttribute("aria-label", isPaused ? "Resume testimonial scrolling" : "Pause testimonial scrolling");
+    });
+  }
 });

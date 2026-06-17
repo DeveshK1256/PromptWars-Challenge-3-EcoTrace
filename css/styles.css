@@ -587,6 +587,27 @@ textarea:focus-visible {
   animation-play-state: paused;
 }
 
+.marquee-pause-btn {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--border-soft, rgba(0, 0, 0, 0.08));
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  font: 600 0.82rem/1.4 'Source Sans 3', sans-serif;
+  color: var(--text-secondary, #50645b);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-block-end: 0.5rem;
+}
+
+.marquee-pause-btn:hover {
+  background: var(--primary, #2f7c64);
+  color: #fff;
+}
+
+.marquee-paused .marquee-track {
+  animation-play-state: paused;
+}
+
 @keyframes marquee-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

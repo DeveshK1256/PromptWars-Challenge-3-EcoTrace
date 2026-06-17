@@ -35,9 +35,6 @@ const DEFAULT_DEMO_CHALLENGES = 2;
 /** Default demo streak value. */
 const DEFAULT_DEMO_STREAK = 5;
 
-/** Hash multiplier used in the fallback (non-SubtleCrypto) hashing algorithm. */
-const HASH_MULTIPLIER = 31;
-
 export const STORAGE_KEYS = Object.freeze({
   profile: "ecotrace.profile",
   footprints: "ecotrace.footprints",
@@ -126,13 +123,12 @@ export async function hashDemoPassword(email, password) {
     const digest = await window.crypto.subtle.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
-  // Non-cryptographic fallback — demo accounts only, not for real auth
-  logWarn('demo-store', 'SHA-256 unavailable — using non-cryptographic hash for demo-mode account. This is NOT suitable for production authentication.');
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * HASH_MULTIPLIER + value.charCodeAt(index)) >>> 0;
-  }
-  return `fallback-${hash.toString(16)}`;
+  // Hard-block: demo accounts require SHA-256. Without SubtleCrypto,
+  // we refuse to create accounts rather than silently degrade security.
+  throw new Error(
+    'Demo account creation requires SHA-256 (Web Crypto API). '
+    + 'Your browser does not support SubtleCrypto — please use a modern browser or HTTPS.'
+  );
 }
 
 /* ── Demo account management ───────────────────────────────────────── */
