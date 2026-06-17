@@ -3,6 +3,7 @@
  * Firebase Cloud Functions for EcoTrace.
  * Handles scheduled tasks, Firestore triggers, and the Gemini API proxy.
  */
+/* global process */
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
@@ -86,10 +87,9 @@ export const onFootprintCreated = onDocumentCreated(
     if (!fcmToken) return;
 
     const belowAverage = totalKg < INDIA_AVG_CO2_KG;
-    const bodyText = `Your latest carbon footprint: ${totalKg.toLocaleString()} kg CO₂/year. `
-      + (belowAverage
-        ? 'Below India average! 🎉'
-        : 'Check tips to reduce further.');
+    const bodyText = `Your latest carbon footprint: ${totalKg.toLocaleString()} kg CO₂/year. ${belowAverage
+      ? 'Below India average! 🎉'
+      : 'Check tips to reduce further.'}`;
 
     const message = {
       token: fcmToken,
@@ -116,9 +116,17 @@ export const onFootprintCreated = onDocumentCreated(
 /** @type {string} Default Gemini model used when client doesn't specify one. */
 const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash-lite';
 
+/** @type {string} Base URL for the Gemini generateContent REST API. */
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
 /**
  * Proxies Gemini API calls to keep the API key server-side.
+ * Mirrors the canonical Netlify proxy at `netlify/functions/gemini.js`.
  * Includes rate limiting (one call per {@link RATE_LIMIT_MS} ms per IP).
+ *
+ * @note The Netlify proxy is the active deployment. This Firebase version
+ * is kept in sync for future migration to Firebase Hosting.
+ *
  * @param {Object} req - HTTP request.
  * @param {Object} res - HTTP response.
  * @returns {Promise<void>}
@@ -131,13 +139,16 @@ export const geminiProxy = onRequest(
       return;
     }
 
-    // Rate limiting
-    const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    // Rate limiting (in-memory — resets on cold start)
+    const clientIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.ip ||
+      'unknown';
     const now = Date.now();
     const lastCall = rateLimitMap.get(clientIp) || 0;
     if (now - lastCall < RATE_LIMIT_MS) {
       res.status(HTTP_TOO_MANY_REQUESTS).json({
-        error: 'Rate limit exceeded. Try again in 10 seconds.',
+        error: 'Rate limited — please wait 10 seconds between requests.',
       });
       return;
     }
@@ -145,27 +156,30 @@ export const geminiProxy = onRequest(
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      res.status(HTTP_INTERNAL_ERROR).json({ error: 'Gemini API key not configured' });
+      res.status(HTTP_INTERNAL_ERROR).json({ error: 'API key not configured' });
       return;
     }
 
     try {
-      const { contents, generationConfig, model } = req.body;
+      const { contents, systemInstruction, generationConfig, model } = req.body;
       const modelName = model || DEFAULT_GEMINI_MODEL;
-      const url =
-        `https://generativelanguage.googleapis.com/v1beta/models/`
-        + `${modelName}:generateContent?key=${apiKey}`;
+      const url = `${GEMINI_API_BASE}/${modelName}:generateContent?key=${apiKey}`;
+
+      const geminiBody = { contents, generationConfig };
+      if (systemInstruction) geminiBody.systemInstruction = systemInstruction;
 
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents, generationConfig }),
+        body: JSON.stringify(geminiBody),
       });
 
       const data = await response.json();
       res.status(response.status).json(data);
     } catch (error) {
+      console.error('Gemini proxy error:', error);
       res.status(HTTP_INTERNAL_ERROR).json({ error: 'Proxy error' });
     }
   },
 );
+

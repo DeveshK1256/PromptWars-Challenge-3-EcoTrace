@@ -42,6 +42,7 @@ export function showToast(message, tone = "success") {
   }
   const toast = document.createElement("p");
   toast.className = `toast toast-${tone}`;
+  if (tone === "error") toast.setAttribute("role", "alert");
   toast.textContent = message;
   region.append(toast);
   window.setTimeout(() => toast.remove(), TOAST_DURATION_MS);

@@ -4,6 +4,11 @@
  * Keeps the Gemini API key server-side so it is never exposed to the browser.
  * Includes per-IP rate limiting (one call per 10 seconds).
  *
+ * @limitation Rate limiting uses an in-memory Map that resets on each cold start.
+ * For production at scale, replace with a durable store (Redis, DynamoDB, KV).
+ * For the current traffic level, in-memory limiting is sufficient as it still
+ * throttles burst abuse within a single function instance lifetime.
+ *
  * Endpoint: POST /.netlify/functions/gemini
  * Expects JSON body with `contents`, `generationConfig`, and optional `model`.
  */
@@ -97,6 +102,7 @@ export default async function handler(request) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: body.contents,
+        systemInstruction: body.systemInstruction,
         generationConfig: body.generationConfig,
       }),
     });

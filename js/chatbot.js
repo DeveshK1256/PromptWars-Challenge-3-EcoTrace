@@ -45,7 +45,7 @@ Rules:
 - If asked non-eco topics, briefly answer then gently connect it back to sustainability.
 - Never make up statistics. Say "I'm not sure of the exact figure" if uncertain.
 - Be warm, encouraging, and positive.`;
-void _SYSTEM_INSTRUCTION; // Available for proxy payloads
+
 
 
 const SUGGESTED_QUESTIONS = [
@@ -177,17 +177,28 @@ async function callGemini(userMessage) {
     return getFallbackResponse(userMessage);
   }
 
+  // Build Gemini-compatible contents array from chat history
+  const contents = chatHistory.map((turn) => ({
+    role: turn.role === "bot" ? "model" : "user",
+    parts: [{ text: turn.text }],
+  }));
+  contents.push({ role: "user", parts: [{ text: userMessage }] });
+
   const response = await fetch(ECO_CONFIG.gemini.proxyEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userMessage, history: chatHistory }),
+    body: JSON.stringify({
+      contents,
+      systemInstruction: { parts: [{ text: _SYSTEM_INSTRUCTION }] },
+      generationConfig: { maxOutputTokens: 256, temperature: 0.7 },
+    }),
   });
 
   if (!response.ok) throw new Error(`Gemini proxy returned ${response.status}`);
   const data = await response.json();
   const text = data?.candidates?.[0]?.content?.parts
     ?.map((p) => p.text || "")
-    .join("") || data?.reply || "";
+    .join("") || "";
   if (!text) throw new Error("Empty response");
   return text.trim();
 }
