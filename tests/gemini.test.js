@@ -1,39 +1,13 @@
 /**
+ * @vitest-environment jsdom
+ */
+/**
  * Tests for Gemini AI response parsing and tip normalization.
- * Verifies the parsing logic handles valid, malformed, and edge-case responses.
+ * Imports the REAL functions from gemini.js instead of re-implementing them.
  */
 import { describe, it, expect } from "vitest";
-
-// ── Re-implement parsing logic from gemini.js for testability ──
-
-const FALLBACK_TIPS = [
-  { id: "tip-transit-pass", category: "Transport", title: "Replace two short car trips with public transport", savingKg: 72, difficulty: "Easy", body: "Pick two predictable weekly trips under 8 km." },
-  { id: "tip-meal-swap", category: "Food", title: "Make three dinners plant-forward", savingKg: 95, difficulty: "Medium", body: "Swap red meat meals for dal, chana, paneer." },
-  { id: "tip-ac-timer", category: "Energy", title: "Raise AC temperature by 1-2°C", savingKg: 120, difficulty: "Easy", body: "Set AC to 25-26°C, use sleep mode." },
-  { id: "tip-buy-list", category: "Shopping", title: "Use a 48-hour buying pause", savingKg: 64, difficulty: "Easy", body: "Add non-essential online orders to a list." },
-  { id: "tip-repair", category: "Shopping", title: "Repair one item before replacing it", savingKg: 180, difficulty: "Medium", body: "Try repair, resale, or refurbished options." },
-];
-
-function normalizeTip(tip, index) {
-  const fallback = FALLBACK_TIPS[index % FALLBACK_TIPS.length];
-  const category = ["Transport", "Food", "Energy", "Shopping"].includes(tip?.category) ? tip.category : fallback.category;
-  const difficulty = ["Easy", "Medium", "Hard"].includes(tip?.difficulty) ? tip.difficulty : fallback.difficulty;
-  return {
-    id: String(tip?.id || fallback.id || `ai-tip-${index}`).slice(0, 80),
-    category,
-    title: String(tip?.title || fallback.title).slice(0, 100),
-    savingKg: Math.max(5, Math.round(Number(tip?.savingKg || fallback.savingKg || 25))),
-    difficulty,
-    body: String(tip?.body || fallback.body).slice(0, 240),
-  };
-}
-
-function parseGeminiResponse(data) {
-  const rawText = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
-  const parsed = JSON.parse(cleaned);
-  return Array.isArray(parsed?.tips) ? parsed.tips.map(normalizeTip).slice(0, 5) : FALLBACK_TIPS;
-}
+import { normalizeTip, parseGeminiResponse } from "../js/gemini.js";
+import { FALLBACK_TIPS } from "../js/data.js";
 
 // ── Tests ──
 

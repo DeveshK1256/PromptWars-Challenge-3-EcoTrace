@@ -4,8 +4,16 @@
  * Keeps the Gemini API key server-side so it is never exposed to the browser.
  * Includes per-IP rate limiting (one call per 10 seconds).
  *
- * @limitation Rate limiting uses an in-memory Map that resets on each cold start.
- * For production at scale, replace with a durable store (Redis, DynamoDB, KV).
+ * @limitation Rate limiting uses an in-memory Map that resets on each cold start
+ * and is local to a single function instance. This means:
+ * - Concurrent instances each maintain separate rate-limit state
+ * - A cold start resets the limiter for all IPs
+ *
+ * **Durable upgrade options (in priority order):**
+ * 1. Netlify Blobs (`@netlify/blobs`) — zero-config KV store, simplest migration
+ * 2. Upstash Redis (`@upstash/redis`) — sub-ms latency, free tier available
+ * 3. Firestore counter doc — already available in the project's Firebase project
+ *
  * For the current traffic level, in-memory limiting is sufficient as it still
  * throttles burst abuse within a single function instance lifetime.
  *

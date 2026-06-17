@@ -124,13 +124,19 @@ function buildHeatmapGrid(cells) {
 
   const gridDiv = document.createElement('div');
   gridDiv.className = 'heatmap-grid';
+  gridDiv.setAttribute('role', 'grid');
+  gridDiv.setAttribute('aria-label', 'Eco activity heatmap \u2014 365 days');
   cells.forEach(c => {
     const isoDate = c.date.toISOString().slice(0, 10);
+    const label = `${isoDate}: ${c.value.toFixed(1)} kg CO\u2082`;
     const cell = document.createElement('div');
     cell.className = 'heatmap-cell';
     cell.dataset.level = c.level;
     cell.style.backgroundColor = HEATMAP_COLOUR_STOPS[c.level];
-    cell.title = `${isoDate}: ${c.value.toFixed(1)} kg CO\u2082`;
+    cell.title = label;
+    cell.setAttribute('aria-label', label);
+    cell.setAttribute('role', 'gridcell');
+    cell.setAttribute('tabindex', '0');
     gridDiv.append(cell);
   });
 

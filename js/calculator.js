@@ -368,7 +368,7 @@ function initCalculator() {
     try {
       renderScore();
       const response = await getPersonalizedTips(latestResult);
-      sessionStorage.setItem("ecotrace.aiTips", JSON.stringify(response.tips));
+      sessionStorage.setItem("ecotrace.aiTips", JSON.stringify({ tips: response.tips, cacheKey: `ecotrace.tips.${new Date().toISOString().slice(0, 10)}.${Math.round(latestResult?.totalKg || 0)}` }));
       renderAiTips(response.tips, response.message || `Tips generated via ${response.source}.`);
     } catch (error) {
       logError('calculator', error);

@@ -72,7 +72,7 @@ ${JSON.stringify(profile, null, 2)}`;
  * @returns {{ id: string, category: string, title: string, savingKg: number, difficulty: string, body: string }}
  *   A validated, safe-to-render tip object.
  */
-function normalizeTip(tip, index) {
+export function normalizeTip(tip, index) {
   const fallback = FALLBACK_TIPS[index % FALLBACK_TIPS.length];
   const category = ["Transport", "Food", "Energy", "Shopping"].includes(tip?.category)
     ? tip.category
@@ -95,7 +95,7 @@ function normalizeTip(tip, index) {
  * @param {Object} data - The raw JSON response from the Gemini API.
  * @returns {Array<Object>} An array of normalized tip objects (max {@link MAX_TIPS}).
  */
-function parseGeminiResponse(data) {
+export function parseGeminiResponse(data) {
   const rawText = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
   const cleaned = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
   const parsed = JSON.parse(cleaned);

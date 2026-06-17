@@ -247,6 +247,7 @@ export function initCountryEmissions() {
     headers.forEach(({ text, className }) => {
       const th = document.createElement("th");
       th.className = className;
+      th.setAttribute("scope", "col");
       th.textContent = text;
       headerRow.append(th);
     });

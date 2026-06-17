@@ -160,10 +160,11 @@ function renderTips() {
 async function loadTips(user, force = false) {
   currentProfile = await getFootprintProfile(user);
   const key = cacheKey(currentProfile);
-  const sessionTips = JSON.parse(sessionStorage.getItem("ecotrace.aiTips") || "null");
+  const sessionRaw = JSON.parse(sessionStorage.getItem("ecotrace.aiTips") || "null");
+  const sessionValid = sessionRaw?.cacheKey === key && sessionRaw?.tips?.length;
   const cached = JSON.parse(localStorage.getItem(key) || "null");
-  if (!force && sessionTips?.length) {
-    currentTips = sessionTips;
+  if (!force && sessionValid) {
+    currentTips = sessionRaw.tips;
     if (status) status.textContent = "Showing tips generated from your latest calculator result.";
   } else if (!force && cached?.tips?.length) {
     currentTips = cached.tips;
@@ -173,6 +174,7 @@ async function loadTips(user, force = false) {
     const response = await getPersonalizedTips(currentProfile);
     currentTips = response.tips;
     localStorage.setItem(key, JSON.stringify({ tips: currentTips, savedAt: new Date().toISOString() }));
+    sessionStorage.setItem("ecotrace.aiTips", JSON.stringify({ tips: currentTips, cacheKey: key }));
     if (status) status.textContent = response.message || `Top tips loaded from ${response.source}.`;
   }
   renderTabs();

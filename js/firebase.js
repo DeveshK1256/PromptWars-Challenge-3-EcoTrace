@@ -371,6 +371,14 @@ export const ecoService = {
     }
     const runtime = await initFirebase();
     const { db, dbMod } = runtime;
+    // Prefer the cached leaderboard snapshot (written by aggregateLeaderboard Cloud Function)
+    try {
+      const cacheDoc = await dbMod.getDoc(dbMod.doc(db, "leaderboardCache", "latest"));
+      if (cacheDoc.exists() && cacheDoc.data()?.entries?.length) {
+        return cacheDoc.data().entries;
+      }
+    } catch { /* cache miss — fall through to direct query */ }
+    // Fallback: direct query (more expensive reads)
     const leaderboardQuery = dbMod.query(
       dbMod.collection(db, "publicProfiles"),
       dbMod.orderBy("greenPoints", "desc"),

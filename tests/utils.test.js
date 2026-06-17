@@ -1,41 +1,12 @@
 /**
- * Unit tests for core utility functions from app.js
- * Tests: formatKg, formatDate, clamp, getBadgeIds
+ * @vitest-environment jsdom
+ */
+/**
+ * Unit tests for core utility functions from app.js.
+ * Imports the REAL functions rather than re-implementing them locally.
  */
 import { describe, it, expect } from "vitest";
-
-// ── Pure utility re-implementations for testing ──
-// (We re-implement these to avoid DOM dependencies in app.js imports)
-
-function formatKg(value) {
-  const amount = Number(value) || 0;
-  if (amount >= 1000) return `${(amount / 1000).toFixed(amount >= 10000 ? 0 : 1)}T`;
-  return `${Math.round(amount).toLocaleString()} kg`;
-}
-
-function formatDate(value) {
-  if (!value) return "Not recorded";
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-const BADGES = [
-  { id: "seedling", label: "Seedling", icon: "🌱", threshold: 25 },
-  { id: "starter", label: "Eco Starter", icon: "🌿", threshold: 100 },
-  { id: "guardian", label: "Tree Guardian", icon: "🌳", threshold: 250 },
-  { id: "defender", label: "Earth Defender", icon: "🌍", threshold: 500 },
-];
-
-function getBadgeIds(points = 0) {
-  return BADGES.filter((badge) => points >= badge.threshold).map((badge) => badge.id);
-}
+import { formatKg, formatDate, clamp, getBadgeIds } from "../js/app.js";
 
 // ── Tests ──
 

@@ -9,6 +9,42 @@ let breakdownChart;
 let trendChart;
 
 /**
+ * Builds a visually-hidden data table summarising chart data for screen readers.
+ * @param {string} caption - Table caption.
+ * @param {string[]} labels - Data labels.
+ * @param {number[]} values - Data values.
+ * @param {string} unit - Unit suffix (e.g. 'kg CO₂').
+ * @returns {HTMLTableElement} A sr-only table element.
+ */
+function buildChartDataTable(caption, labels, values, unit) {
+  const table = document.createElement('table');
+  table.className = 'sr-only';
+  const cap = document.createElement('caption');
+  cap.textContent = caption;
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Category', 'Value'].forEach(t => {
+    const th = document.createElement('th');
+    th.setAttribute('scope', 'col');
+    th.textContent = t;
+    headRow.append(th);
+  });
+  thead.append(headRow);
+  const tbody = document.createElement('tbody');
+  labels.forEach((label, i) => {
+    const tr = document.createElement('tr');
+    const td1 = document.createElement('td');
+    td1.textContent = label;
+    const td2 = document.createElement('td');
+    td2.textContent = `${Math.round(values[i]).toLocaleString()} ${unit}`;
+    tr.append(td1, td2);
+    tbody.append(tr);
+  });
+  table.append(cap, thead, tbody);
+  return table;
+}
+
+/**
  * Prepares a canvas element for high-DPI rendering by setting its pixel
  * dimensions, CSS size, and returning a scaled 2D context.
  * @param {HTMLCanvasElement} canvas - The canvas element to prepare.
@@ -186,6 +222,18 @@ function renderBreakdownChart(latest) {
       cutout: "64%",
     },
   });
+  // Accessible data table for screen readers
+  const chartLabels = ['Transport', 'Food', 'Energy', 'Shopping'];
+  const chartValues = [
+    latest.breakdown.transport || 0,
+    latest.breakdown.food || 0,
+    latest.breakdown.energy || 0,
+    latest.breakdown.shopping || 0,
+  ];
+  canvas.parentElement?.querySelector('.sr-only')?.remove();
+  canvas.parentElement?.append(
+    buildChartDataTable('Carbon footprint breakdown', chartLabels, chartValues, 'kg CO\u2082')
+  );
 }
 
 /**
@@ -235,6 +283,15 @@ function renderTrendChart(footprints) {
       },
     },
   });
+  // Accessible data table for trend chart
+  const trendLabels = chronological.map((item) =>
+    new Intl.DateTimeFormat('en-IN', { month: 'short' }).format(new Date(item.date || item.createdAt)),
+  );
+  const trendValues = chronological.map((item) => item.totalKg);
+  canvas.parentElement?.querySelector('.sr-only')?.remove();
+  canvas.parentElement?.append(
+    buildChartDataTable('Carbon footprint trend', trendLabels, trendValues, 'kg CO\u2082/year')
+  );
 }
 
 export { drawFallbackDonut, drawFallbackLine, renderBreakdownChart, renderTrendChart };
