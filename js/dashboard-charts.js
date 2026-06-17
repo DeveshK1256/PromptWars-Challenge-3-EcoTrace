@@ -104,9 +104,9 @@ function drawFallbackDonut(canvas, latest) {
     ["Shopping", latest.breakdown.shopping || 0, "#395c6b"],
   ];
   const total = values.reduce((sum, [, value]) => sum + value, 0) || 1;
-  const radius = Math.min(width, height) * 0.25;
+  const radius = Math.min(width, height) * 0.22;
   const centerX = width / 2;
-  const centerY = height * 0.36;
+  const centerY = height * 0.3;
   let angle = -Math.PI / 2;
   values.forEach(([, value, color]) => {
     const nextAngle = angle + (value / total) * Math.PI * 2;
@@ -119,23 +119,22 @@ function drawFallbackDonut(canvas, latest) {
     angle = nextAngle;
   });
   ctx.fillStyle = "#1e3029";
-  ctx.font = "700 26px Space Grotesk, sans-serif";
+  ctx.font = "700 22px Space Grotesk, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(`${Math.round(total).toLocaleString()} kg`, centerX, centerY + 8);
-  ctx.font = "600 12px Source Sans 3, sans-serif";
-  const legendTop = height - 55;
-  const colWidth = (width - 40) / 2;
+  ctx.fillText(`${Math.round(total).toLocaleString()} kg`, centerX, centerY + 7);
+
+  // Single-column vertical legend below the donut
+  ctx.font = "600 11px Source Sans 3, sans-serif";
+  const legendTop = centerY + radius + 30;
+  const lineHeight = 18;
   values.forEach(([label, value, color], index) => {
-    const col = index % 2;
-    const row = Math.floor(index / 2);
-    const x = 20 + col * colWidth;
-    const y = legendTop + row * 24;
+    const y = legendTop + index * lineHeight;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y - 9, 12, 12);
+    ctx.fillRect(16, y - 8, 10, 10);
     ctx.fillStyle = "#405a4e";
     ctx.textAlign = "left";
-    const text = `${label}: ${Math.round(value).toLocaleString()} kg`;
-    ctx.fillText(text, x + 18, y + 1);
+    const pct = Math.round((value / total) * 100);
+    ctx.fillText(`${label}: ${Math.round(value).toLocaleString()} kg (${pct}%)`, 32, y + 1);
   });
 }
 
