@@ -89,6 +89,39 @@
         </div>
       </section>
 
+      <section class="section" aria-labelledby="level-title">
+        <div class="section-heading"><div>
+          <h2 id="level-title"><i class="fa-solid fa-ranking-star" aria-hidden="true"></i> Your Level</h2>
+          <p>Earn points to level up from Eco Beginner to Earth Legend.</p>
+        </div></div>
+        <div data-level-progress></div>
+      </section>
+
+      <section class="section" aria-labelledby="missions-title">
+        <div class="section-heading"><div>
+          <h2 id="missions-title"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Daily Missions</h2>
+          <p>Complete today's missions to earn bonus points and build your streak.</p>
+        </div></div>
+        <div data-daily-missions></div>
+      </section>
+
+      <section class="section" aria-labelledby="streak-title">
+        <div class="section-heading"><div>
+          <h2 id="streak-title"><i class="fa-solid fa-fire" aria-hidden="true"></i> Streak</h2>
+          <p>Stay active every day to build your streak and unlock milestone rewards.</p>
+        </div></div>
+        <div data-streak-display></div>
+      </section>
+
+      <section class="section" aria-labelledby="teams-title">
+        <div class="section-heading"><div>
+          <h2 id="teams-title"><i class="fa-solid fa-people-group" aria-hidden="true"></i> Team Challenges</h2>
+          <p>Join or create a team to compete on collective CO₂ savings.</p>
+        </div></div>
+        <div class="panel" data-team-leaderboard></div>
+        <div data-create-team></div>
+      </section>
+
       <section class="section" aria-labelledby="pledge-title">
         <div class="section-heading"><div><h2 id="pledge-title">Eco Pledge Wall</h2><p>Join the community. Make your climate promise public.</p></div></div>
         <form class="pledge-form" data-pledge-form>
@@ -107,6 +140,17 @@
     </footer>
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/challenges.js"></script>
+    <script type="module">
+      import { renderLevelProgress, renderDailyMissions, renderStreakDisplay } from './js/gamification.js';
+      import { renderTeamLeaderboard, renderCreateTeamForm } from './js/team-challenges.js';
+      const pts = Number(localStorage.getItem('greenPoints')) || 0;
+      renderLevelProgress(document.querySelector('[data-level-progress]'), pts);
+      renderDailyMissions(document.querySelector('[data-daily-missions]'));
+      renderStreakDisplay(document.querySelector('[data-streak-display]'));
+      const lb = document.querySelector('[data-team-leaderboard]');
+      renderTeamLeaderboard(lb);
+      renderCreateTeamForm(document.querySelector('[data-create-team]'), lb);
+    </script>
     <script type="module" src="js/features.js"></script>
   </body>
 </html>

@@ -140,6 +140,22 @@
         <div class="offset-grid" data-offset-viz></div>
       </section>
 
+      <section class="section" aria-labelledby="forecast-title">
+        <div class="section-heading"><div>
+          <h2 id="forecast-title"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> AI Forecast</h2>
+          <p>AI-powered prediction of your future carbon footprint based on historical trends.</p>
+        </div></div>
+        <div data-forecast-panel></div>
+      </section>
+
+      <section class="section" aria-labelledby="dash-equiv-title">
+        <div class="section-heading"><div>
+          <h2 id="dash-equiv-title"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Impact Equivalences</h2>
+          <p>What your annual footprint means in real-world terms.</p>
+        </div></div>
+        <div data-dashboard-equivalences></div>
+      </section>
+
       <section class="section" aria-labelledby="compare-title">
         <div class="section-heading"><div><h2 id="compare-title">How You Compare</h2><p>Your carbon footprint vs. country averages and climate targets.</p></div></div>
         <div class="compare-list" data-footprint-compare></div>
@@ -160,5 +176,22 @@
     </footer>
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/dashboard.js"></script>
+    <script type="module">
+      import { renderEquivalences } from './js/impact-equivalences.js';
+      import { getForecast, renderForecast } from './js/forecasting.js';
+
+      // Render equivalences
+      const co2 = Number(localStorage.getItem('lastFootprintKg')) || 0;
+      if (co2 > 0) renderEquivalences(document.querySelector('[data-dashboard-equivalences]'), co2);
+
+      // Render forecast
+      (async () => {
+        try {
+          const stored = JSON.parse(sessionStorage.getItem('ecotrace.footprints') || '[]');
+          const forecast = await getForecast(stored.length ? stored : [{ totalKg: co2 || 4000, date: new Date().toISOString() }]);
+          renderForecast(document.querySelector('[data-forecast-panel]'), forecast);
+        } catch { /* forecast is optional */ }
+      })();
+    </script>
       <script type="module" src="js/features.js"></script></body>
 </html>

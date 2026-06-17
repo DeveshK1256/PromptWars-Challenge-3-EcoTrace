@@ -46,12 +46,48 @@ Rules:
 - Never make up statistics. Say "I'm not sure of the exact figure" if uncertain.
 - Be warm, encouraging, and positive.`;
 
+/**
+ * Builds a context-aware system instruction that includes the user's
+ * actual footprint data for personalized advice.
+ * @returns {string}
+ */
+function buildSystemInstruction() {
+  let instruction = _SYSTEM_INSTRUCTION;
+  try {
+    const profileRaw = sessionStorage.getItem('ecotrace.latestProfile')
+      || localStorage.getItem('ecotrace.profile');
+    if (profileRaw) {
+      const profile = JSON.parse(profileRaw);
+      const total = Math.round(profile.totalKg || 0);
+      const bd = profile.breakdown || {};
+      if (total > 0) {
+        instruction += `\n\nUser's current footprint: ${total} kg CO₂/year.`;
+        instruction += `\nBreakdown: Transport ${Math.round(bd.transport || 0)} kg`;
+        instruction += `, Food ${Math.round(bd.food || 0)} kg`;
+        instruction += `, Energy ${Math.round(bd.energy || 0)} kg`;
+        instruction += `, Shopping ${Math.round(bd.shopping || 0)} kg.`;
+        const categories = [
+          { name: 'Transport', kg: bd.transport || 0 },
+          { name: 'Food', kg: bd.food || 0 },
+          { name: 'Energy', kg: bd.energy || 0 },
+          { name: 'Shopping', kg: bd.shopping || 0 },
+        ].sort((a, b) => b.kg - a.kg);
+        instruction += `\nHighest category: ${categories[0].name} (${Math.round((categories[0].kg / total) * 100)}%).`;
+        instruction += '\nUse this data to give personalized, specific advice.';
+      }
+    }
+  } catch { /* ignore — use base instruction */ }
+  return instruction;
+}
+
 
 
 const SUGGESTED_QUESTIONS = [
   "🌱 How can I reduce my carbon footprint?",
+  "📊 Analyze my footprint and suggest top 3 actions",
   "🚗 Is an EV really better for the environment?",
   "🥩 How much CO₂ does eating meat produce?",
+  "🎯 How can I reduce my footprint by 20%?",
   "🏠 Best ways to save energy at home?",
   "♻️ What can and can't be recycled?",
   "🌍 What is the Paris Agreement?",
@@ -189,7 +225,7 @@ async function callGemini(userMessage) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents,
-      systemInstruction: { parts: [{ text: _SYSTEM_INSTRUCTION }] },
+      systemInstruction: { parts: [{ text: buildSystemInstruction() }] },
       generationConfig: { maxOutputTokens: 256, temperature: 0.7 },
     }),
   });
