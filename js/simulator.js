@@ -75,6 +75,10 @@ function createSliderRow(action) {
   const row = document.createElement("div");
   row.className = "sim-slider-row";
 
+  // Top row: icon + label on left, value + saving on right
+  const header = document.createElement("div");
+  header.className = "sim-header";
+
   const label = document.createElement("label");
   label.className = "sim-label";
   label.setAttribute("for", action.id);
@@ -83,6 +87,25 @@ function createSliderRow(action) {
   icon.setAttribute("aria-hidden", "true");
   label.append(icon, ` ${action.label}`);
 
+  const meta = document.createElement("div");
+  meta.className = "sim-meta";
+
+  const valueDisplay = document.createElement("span");
+  valueDisplay.className = "sim-value";
+  valueDisplay.textContent = `${action.defaultVal} ${action.unit}`;
+  valueDisplay.setAttribute("data-sim-value", action.id);
+
+  const savingDisplay = document.createElement("span");
+  savingDisplay.className = "sim-saving";
+  savingDisplay.setAttribute("data-sim-saving", action.id);
+  savingDisplay.textContent = "0 kg saved";
+
+  meta.append(valueDisplay, savingDisplay);
+  header.append(label, meta);
+
+  // Slider
+  const sliderWrap = document.createElement("div");
+  sliderWrap.className = "sim-slider-wrap";
   const slider = document.createElement("input");
   slider.type = "range";
   slider.id = action.id;
@@ -92,22 +115,14 @@ function createSliderRow(action) {
   slider.value = String(action.defaultVal);
   slider.className = "sim-slider";
   slider.setAttribute("aria-label", `${action.label} (${action.unit})`);
+  sliderWrap.append(slider);
 
-  const valueDisplay = document.createElement("span");
-  valueDisplay.className = "sim-value";
-  valueDisplay.textContent = `${action.defaultVal} ${action.unit}`;
-  valueDisplay.setAttribute("data-sim-value", action.id);
-
+  // Description
   const desc = document.createElement("p");
   desc.className = "sim-description muted";
   desc.textContent = action.description;
 
-  const savingDisplay = document.createElement("span");
-  savingDisplay.className = "sim-saving";
-  savingDisplay.setAttribute("data-sim-saving", action.id);
-  savingDisplay.textContent = "0 kg CO₂/year saved";
-
-  row.append(label, slider, valueDisplay, savingDisplay, desc);
+  row.append(header, sliderWrap, desc);
   return row;
 }
 
