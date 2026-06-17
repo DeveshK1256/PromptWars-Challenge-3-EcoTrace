@@ -246,8 +246,8 @@
     <script type="module" src="js/simulator.js"></script>
     <script type="module">
       import { renderEquivalences } from './js/impact-equivalences.js';
-      const co2 = Number(localStorage.getItem('lastFootprintKg')) || 0;
-      if (co2 > 0) renderEquivalences(document.querySelector('[data-impact-equivalences]'), co2);
+      const co2 = Number(localStorage.getItem('lastFootprintKg')) || 4000;
+      renderEquivalences(document.querySelector('[data-impact-equivalences]'), co2);
       // Re-render when calculator saves new result
       window.addEventListener('storage', (e) => {
         if (e.key === 'lastFootprintKg') {

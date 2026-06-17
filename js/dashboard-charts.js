@@ -104,9 +104,9 @@ function drawFallbackDonut(canvas, latest) {
     ["Shopping", latest.breakdown.shopping || 0, "#395c6b"],
   ];
   const total = values.reduce((sum, [, value]) => sum + value, 0) || 1;
-  const radius = Math.min(width, height) * 0.28;
+  const radius = Math.min(width, height) * 0.25;
   const centerX = width / 2;
-  const centerY = height * 0.42;
+  const centerY = height * 0.36;
   let angle = -Math.PI / 2;
   values.forEach(([, value, color]) => {
     const nextAngle = angle + (value / total) * Math.PI * 2;
@@ -122,15 +122,20 @@ function drawFallbackDonut(canvas, latest) {
   ctx.font = "700 26px Space Grotesk, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(`${Math.round(total).toLocaleString()} kg`, centerX, centerY + 8);
-  ctx.font = "700 13px Source Sans 3, sans-serif";
+  ctx.font = "600 12px Source Sans 3, sans-serif";
+  const legendTop = height - 55;
+  const colWidth = (width - 40) / 2;
   values.forEach(([label, value, color], index) => {
-    const x = 28 + (index % 2) * (width / 2);
-    const y = height - 70 + Math.floor(index / 2) * 28;
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const x = 20 + col * colWidth;
+    const y = legendTop + row * 24;
     ctx.fillStyle = color;
-    ctx.fillRect(x, y - 10, 14, 14);
+    ctx.fillRect(x, y - 9, 12, 12);
     ctx.fillStyle = "#405a4e";
     ctx.textAlign = "left";
-    ctx.fillText(`${label}: ${Math.round(value).toLocaleString()} kg`, x + 22, y + 2);
+    const text = `${label}: ${Math.round(value).toLocaleString()} kg`;
+    ctx.fillText(text, x + 18, y + 1);
   });
 }
 

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --ink: #1e3029;
   --ink-2: #405a4e;
@@ -2270,9 +2270,47 @@ textarea:focus-visible {
   color: var(--ink);
 }
 
-/* Dark mode â€” Map canvas */
+/* Dark mode — Map canvas & page */
 [data-theme="dark"] .map-canvas {
   background: linear-gradient(135deg, #0f251e, #162420);
+}
+[data-theme="dark"] .map-layout .panel {
+  background: var(--surface);
+  color: var(--ink);
+}
+[data-theme="dark"] .map-layout .panel h2 {
+  color: var(--ink);
+}
+[data-theme="dark"] .map-layout .activity-log li {
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .map-result-icon {
+  background: rgba(78, 203, 142, 0.15);
+}
+[data-theme="dark"] .search-panel input,
+[data-theme="dark"] .search-panel select {
+  background: var(--surface-strong);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .search-panel input::placeholder {
+  color: var(--muted);
+}
+[data-theme="dark"] .filter-tab {
+  background: var(--surface-strong);
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .filter-tab[aria-pressed="true"] {
+  background: rgba(78, 203, 142, 0.2);
+  color: var(--forest);
+}
+[data-theme="dark"] .map-placeholder {
+  color: var(--ink-2);
+}
+[data-theme="dark"] [data-map-status] {
+  color: var(--muted);
 }
 
 /* Dark mode â€” Chatbot */

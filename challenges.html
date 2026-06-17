@@ -143,13 +143,25 @@
     <script type="module">
       import { renderLevelProgress, renderDailyMissions, renderStreakDisplay } from './js/gamification.js';
       import { renderTeamLeaderboard, renderCreateTeamForm } from './js/team-challenges.js';
-      const pts = Number(localStorage.getItem('greenPoints')) || 0;
-      renderLevelProgress(document.querySelector('[data-level-progress]'), pts);
-      renderDailyMissions(document.querySelector('[data-daily-missions]'));
-      renderStreakDisplay(document.querySelector('[data-streak-display]'));
-      const lb = document.querySelector('[data-team-leaderboard]');
-      renderTeamLeaderboard(lb);
-      renderCreateTeamForm(document.querySelector('[data-create-team]'), lb);
+
+      try {
+        const pts = Number(localStorage.getItem('greenPoints')) || 0;
+        renderLevelProgress(document.querySelector('[data-level-progress]'), pts);
+      } catch (e) { console.error('Level render failed:', e); }
+
+      try {
+        renderDailyMissions(document.querySelector('[data-daily-missions]'));
+      } catch (e) { console.error('Missions render failed:', e); }
+
+      try {
+        renderStreakDisplay(document.querySelector('[data-streak-display]'));
+      } catch (e) { console.error('Streak render failed:', e); }
+
+      try {
+        const lb = document.querySelector('[data-team-leaderboard]');
+        renderTeamLeaderboard(lb);
+        renderCreateTeamForm(document.querySelector('[data-create-team]'), lb);
+      } catch (e) { console.error('Team render failed:', e); }
     </script>
     <script type="module" src="js/features.js"></script>
   </body>
