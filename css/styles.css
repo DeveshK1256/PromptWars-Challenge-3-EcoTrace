@@ -3231,4 +3231,36 @@ textarea:focus-visible {
 [data-theme="dark"] .team-co2 { color: var(--forest); }
 [data-theme="dark"] .create-team-form input { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
 
-
+/* ── Calculator page dark mode ──────────────────────────────────────── */
+[data-theme="dark"] .search-result-card {
+  background: rgba(22, 36, 32, 0.92);
+  border-color: var(--line);
+}
+[data-theme="dark"] .search-result-card h3 { color: var(--ink); }
+[data-theme="dark"] .search-result-card .muted { color: var(--muted); }
+[data-theme="dark"] .emission-estimate {
+  background: rgba(78, 203, 142, 0.15);
+  color: var(--forest);
+}
+[data-theme="dark"] .eyebrow { color: var(--forest); }
+[data-theme="dark"] .panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .stepper {
+  background: var(--surface);
+  border-color: var(--line);
+}
+[data-theme="dark"] .step-indicator {
+  color: var(--ink-2);
+}
+[data-theme="dark"] .form-field {
+  color: var(--ink);
+}
+[data-theme="dark"] .form-field input,
+[data-theme="dark"] .form-field select,
+[data-theme="dark"] .form-field textarea {
+  background: var(--surface-strong);
+  color: var(--ink);
+  border-color: var(--line);
+}
