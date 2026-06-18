@@ -176,28 +176,5 @@
     </footer>
     <script type="module" src="js/app.js"></script>
     <script type="module" src="js/dashboard.js"></script>
-    <script type="module">
-      import { renderEquivalences } from './js/impact-equivalences.js';
-      import { getForecast, renderForecast } from './js/forecasting.js';
-
-      // Render equivalences — use saved footprint or sensible default
-      const co2 = Number(localStorage.getItem('lastFootprintKg')) || 4000;
-      renderEquivalences(document.querySelector('[data-dashboard-equivalences]'), co2);
-
-      // Render forecast
-      (async () => {
-        try {
-          const stored = JSON.parse(sessionStorage.getItem('ecotrace.footprints') || '[]');
-          const forecast = await getForecast(stored.length ? stored : [{ totalKg: co2, date: new Date().toISOString() }]);
-          renderForecast(document.querySelector('[data-forecast-panel]'), forecast);
-        } catch (err) {
-          // Render default forecast on any error
-          try {
-            const fallback = await getForecast([{ totalKg: co2, date: new Date().toISOString() }]);
-            renderForecast(document.querySelector('[data-forecast-panel]'), fallback);
-          } catch { /* forecast is optional */ }
-        }
-      })();
-    </script>
       <script type="module" src="js/features.js"></script></body>
 </html>

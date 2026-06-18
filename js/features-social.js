@@ -62,9 +62,13 @@ function drawScoreCard(ctx, width, height) {
   ctx.font = "bold 14px sans-serif";
   ctx.fillText("MY CARBON SCORECARD", 32, 80);
 
-  const saved = document.querySelector("[data-stat-saved]")?.textContent || "0 kg";
-  const points = document.querySelector("[data-stat-points]")?.textContent || "0";
-  const badges = document.querySelector("[data-stat-badges]")?.textContent || "0";
+  // Read data from DOM first (profile page), fall back to localStorage (dashboard)
+  const saved = document.querySelector("[data-stat-saved]")?.textContent
+    || `${Number(localStorage.getItem("lastFootprintKg") || 0).toLocaleString()} kg`;
+  const points = document.querySelector("[data-stat-points]")?.textContent
+    || String(Number(localStorage.getItem("greenPoints") || 0));
+  const badgeCount = document.querySelector("[data-stat-badges]")?.textContent
+    || String(Number(localStorage.getItem("ecotrace.badgeCount") || 0));
 
   ctx.fillStyle = "#4ecb8e";
   ctx.font = "bold 48px 'Space Grotesk',sans-serif";
@@ -77,7 +81,7 @@ function drawScoreCard(ctx, width, height) {
   ctx.fillStyle = "#fff";
   ctx.font = "bold 32px 'Space Grotesk',sans-serif";
   ctx.fillText(points, 32, 225);
-  ctx.fillText(badges, 220, 225);
+  ctx.fillText(badgeCount, 220, 225);
 
   ctx.fillStyle = "#8ba99a";
   ctx.font = "14px sans-serif";
@@ -110,11 +114,12 @@ export function initShareCard() {
     drawScoreCard(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = "ecotrace-scorecard.png";
       a.click();
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   });
 }

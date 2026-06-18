@@ -118,7 +118,8 @@ function drawFallbackDonut(canvas, latest) {
     ctx.stroke();
     angle = nextAngle;
   });
-  ctx.fillStyle = "#1e3029";
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.fillStyle = isDark ? '#e4efe8' : '#1e3029';
   ctx.font = "700 22px Space Grotesk, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(`${Math.round(total).toLocaleString()} kg`, centerX, centerY + 7);
@@ -131,7 +132,7 @@ function drawFallbackDonut(canvas, latest) {
     const y = legendTop + index * lineHeight;
     ctx.fillStyle = color;
     ctx.fillRect(16, y - 8, 10, 10);
-    ctx.fillStyle = "#405a4e";
+    ctx.fillStyle = isDark ? '#b8cfc2' : '#405a4e';
     ctx.textAlign = "left";
     const pct = Math.round((value / total) * 100);
     ctx.fillText(`${label}: ${Math.round(value).toLocaleString()} kg (${pct}%)`, 32, y + 1);
@@ -162,7 +163,8 @@ function drawFallbackLine(canvas, footprints) {
     return { x, y };
   };
 
-  ctx.strokeStyle = "rgba(30, 48, 41, 0.1)";
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  ctx.strokeStyle = isDark ? 'rgba(228, 239, 232, 0.1)' : 'rgba(30, 48, 41, 0.1)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i += 1) {
     const y = padding.top + (i / 4) * plotHeight;
@@ -196,7 +198,7 @@ function drawFallbackLine(canvas, footprints) {
     ctx.fill();
   });
 
-  ctx.fillStyle = "#66786e";
+  ctx.fillStyle = isDark ? '#b8cfc2' : '#66786e';
   ctx.font = "700 12px Source Sans 3, sans-serif";
   ctx.textAlign = "center";
   chronological.forEach((item, index) => {

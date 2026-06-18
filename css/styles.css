@@ -2288,6 +2288,13 @@ textarea:focus-visible {
 [data-theme="dark"] .map-result-icon {
   background: rgba(78, 203, 142, 0.15);
 }
+[data-theme="dark"] .search-panel {
+  background: rgba(22, 36, 32, 0.92);
+  border-color: var(--line);
+}
+[data-theme="dark"] .search-panel .muted {
+  color: var(--muted);
+}
 [data-theme="dark"] .search-panel input,
 [data-theme="dark"] .search-panel select {
   background: var(--surface-strong);
@@ -3200,5 +3207,28 @@ textarea:focus-visible {
 [data-theme="dark"] .forecast-chart,
 [data-theme="dark"] .sim-bar-chart { background: rgba(255, 255, 255, 0.02); border-color: rgba(255,255,255,0.04); }
 [data-theme="dark"] .forecast-card-wide { background: linear-gradient(135deg, rgba(47,124,100,0.1), rgba(167,201,87,0.05)); }
+[data-theme="dark"] .sim-value { background: rgba(78, 203, 142, 0.15); color: var(--forest); }
+[data-theme="dark"] .sim-saving { color: var(--muted); }
+[data-theme="dark"] .sim-saving-active { color: var(--forest); background: rgba(78, 203, 142, 0.1); }
+[data-theme="dark"] .sim-description { color: var(--muted); }
+[data-theme="dark"] .sim-card-value { color: var(--ink); }
+[data-theme="dark"] .sim-card-label { color: var(--muted); }
+[data-theme="dark"] .sim-bar span { color: var(--ink); }
+[data-theme="dark"] .forecast-value { color: var(--ink); }
+[data-theme="dark"] .forecast-label { color: var(--muted); }
+[data-theme="dark"] .forecast-recommendation { color: var(--ink); }
+[data-theme="dark"] .forecast-saving { color: var(--forest); }
+[data-theme="dark"] .streak-number { color: var(--forest); }
+[data-theme="dark"] .streak-label { color: var(--muted); }
+[data-theme="dark"] .level-label { color: var(--ink); }
+[data-theme="dark"] .level-progress-text { color: var(--muted); }
+[data-theme="dark"] .mission-label { color: var(--ink); }
+[data-theme="dark"] .mission-points { color: var(--forest); }
+[data-theme="dark"] .equiv-value { color: var(--forest); }
+[data-theme="dark"] .equiv-label { color: var(--ink); }
+[data-theme="dark"] .equiv-desc { color: var(--muted); }
+[data-theme="dark"] .team-badge { color: var(--forest); }
+[data-theme="dark"] .team-co2 { color: var(--forest); }
+[data-theme="dark"] .create-team-form input { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
 
 

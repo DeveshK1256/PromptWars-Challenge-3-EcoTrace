@@ -15,6 +15,12 @@ import { initEcoHeatmap, initShareCard, initPledgeWall, initFootprintComparison 
 import { initOffsetVisualizer, initAmbientSounds } from './features-extras.js';
 export { initOffsetVisualizer, initAmbientSounds };
 
+// Feature modules for dashboard/calculator/challenges pages
+import { renderEquivalences } from './impact-equivalences.js';
+import { getForecast, renderForecast } from './forecasting.js';
+import { renderLevelProgress, renderDailyMissions, renderStreakDisplay } from './gamification.js';
+import { renderTeamLeaderboard, renderCreateTeamForm } from './team-challenges.js';
+
 /* ───────── Named Constants ───────── */
 
 /** @const {number} Upper PPM bound used for the time-machine progress bar. */
@@ -236,4 +242,61 @@ document.addEventListener("DOMContentLoaded", () => {
   initAmbientSounds();
   initPledgeWall();
   initFootprintComparison();
+
+  // ── Equivalences (dashboard + calculator) ──
+  try {
+    const equivContainer = document.querySelector('[data-dashboard-equivalences]')
+      || document.querySelector('[data-impact-equivalences]');
+    if (equivContainer) {
+      const co2 = Number(localStorage.getItem('lastFootprintKg')) || 4000;
+      renderEquivalences(equivContainer, co2);
+      // Re-render when calculator saves new result
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'lastFootprintKg') {
+          renderEquivalences(equivContainer, Number(e.newValue) || 4000);
+        }
+      });
+    }
+  } catch (e) { console.error('Equivalences init failed:', e); }
+
+  // ── Forecast (dashboard) ──
+  const forecastPanel = document.querySelector('[data-forecast-panel]');
+  if (forecastPanel) {
+    (async () => {
+      try {
+        const co2 = Number(localStorage.getItem('lastFootprintKg')) || 4000;
+        const stored = JSON.parse(sessionStorage.getItem('ecotrace.footprints') || '[]');
+        const forecast = await getForecast(stored.length ? stored : [{ totalKg: co2, date: new Date().toISOString() }]);
+        renderForecast(forecastPanel, forecast);
+      } catch (e) { console.error('Forecast init failed:', e); }
+    })();
+  }
+
+  // ── Gamification (challenges) ──
+  try {
+    const levelEl = document.querySelector('[data-level-progress]');
+    if (levelEl) {
+      const pts = Number(localStorage.getItem('greenPoints')) || 0;
+      renderLevelProgress(levelEl, pts);
+    }
+  } catch (e) { console.error('Level render failed:', e); }
+
+  try {
+    const missionsEl = document.querySelector('[data-daily-missions]');
+    if (missionsEl) renderDailyMissions(missionsEl);
+  } catch (e) { console.error('Missions render failed:', e); }
+
+  try {
+    const streakEl = document.querySelector('[data-streak-display]');
+    if (streakEl) renderStreakDisplay(streakEl);
+  } catch (e) { console.error('Streak render failed:', e); }
+
+  // ── Team Challenges ──
+  try {
+    const teamLb = document.querySelector('[data-team-leaderboard]');
+    if (teamLb) {
+      renderTeamLeaderboard(teamLb);
+      renderCreateTeamForm(document.querySelector('[data-create-team]'), teamLb);
+    }
+  } catch (e) { console.error('Team render failed:', e); }
 });
