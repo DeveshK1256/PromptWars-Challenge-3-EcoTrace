@@ -18,7 +18,10 @@
     <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="modulepreload" href="js/app.js">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
+    <link rel="stylesheet" href="css/styles.css" fetchpriority="high">
     <!-- Chart.js is loaded dynamically in dashboard-charts.js when canvas is visible -->
   </head>
   <body data-auth-required>
@@ -76,13 +79,13 @@
             <article class="chart-card">
               <h2>Footprint breakdown</h2>
               <div class="chart-shell">
-                <canvas id="breakdownChart" role="img" aria-label="Donut chart of footprint by transport, food, energy, and shopping"><p class="sr-only">Chart showing your carbon footprint breakdown by category: transport, food, energy, and shopping.</p></canvas>
+                <canvas id="breakdownChart" width="300" height="300" role="img" aria-label="Donut chart of footprint by transport, food, energy, and shopping"><p class="sr-only">Chart showing your carbon footprint breakdown by category: transport, food, energy, and shopping.</p></canvas>
               </div>
             </article>
             <article class="chart-card">
               <h2>Monthly footprint trend</h2>
               <div class="chart-shell">
-                <canvas id="trendChart" role="img" aria-label="Line chart of monthly carbon footprint trend over time"><p class="sr-only">Chart showing your monthly carbon footprint trend over time.</p></canvas>
+                <canvas id="trendChart" width="600" height="300" role="img" aria-label="Line chart of monthly carbon footprint trend over time"><p class="sr-only">Chart showing your monthly carbon footprint trend over time.</p></canvas>
               </div>
             </article>
           </div>

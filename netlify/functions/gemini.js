@@ -2,26 +2,15 @@
  * @module gemini
  * Netlify serverless function that proxies Gemini API calls.
  * Keeps the Gemini API key server-side so it is never exposed to the browser.
- * Includes per-IP rate limiting (one call per 10 seconds).
- *
- * @limitation Rate limiting uses an in-memory Map that resets on each cold start
- * and is local to a single function instance. This means:
- * - Concurrent instances each maintain separate rate-limit state
- * - A cold start resets the limiter for all IPs
- *
- * **Durable upgrade options (in priority order):**
- * 1. Netlify Blobs (`@netlify/blobs`) — zero-config KV store, simplest migration
- * 2. Upstash Redis (`@upstash/redis`) — sub-ms latency, free tier available
- * 3. Firestore counter doc — already available in the project's Firebase project
- *
- * For the current traffic level, in-memory limiting is sufficient as it still
- * throttles burst abuse within a single function instance lifetime.
+ * Includes per-IP rate limiting (one call per 10 seconds) via Netlify Blobs,
+ * input sanitization, and CORS origin validation.
  *
  * Endpoint: POST /.netlify/functions/gemini
  * Expects JSON body with `contents`, `generationConfig`, and optional `model`.
  */
 
 /* global Response, process */
+import { getStore } from '@netlify/blobs';
 
 /** @type {string} Default Gemini model when the client doesn't specify one. */
 const DEFAULT_MODEL = 'gemini-2.0-flash-lite';
@@ -32,8 +21,8 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 /** @type {number} Minimum interval (ms) between calls from the same IP. */
 const RATE_LIMIT_MS = 10_000;
 
-/** @type {Map<string, number>} Maps client IP → timestamp of last allowed call. */
-const rateLimitMap = new Map();
+/** @type {string[]} Origins allowed to call this function. */
+const ALLOWED_ORIGINS = ['https://eco-tracee.netlify.app', 'http://localhost:8888'];
 
 /**
  * Extracts the client IP address from the incoming request headers.
@@ -51,20 +40,74 @@ function getClientIp(request) {
 }
 
 /**
- * Checks whether the given IP is rate-limited.
- * If not limited, records the current timestamp for that IP.
+ * Checks whether the given IP is rate-limited using persistent storage.
+ * Uses Netlify Blobs as a durable KV store so rate-limit state survives
+ * cold starts and is shared across function instances.
  *
- * @param {string} ip - The client IP address.
- * @returns {boolean} `true` if the request should be blocked, `false` if allowed.
+ * @param {string} ip - Client IP address.
+ * @returns {Promise<boolean>} True if rate-limited.
  */
-function isRateLimited(ip) {
+async function isRateLimited(ip) {
+  const store = getStore('rate-limits');
+  const key = `rl-${ip.replace(/[^a-zA-Z0-9]/g, '-')}`;
   const now = Date.now();
-  const lastCall = rateLimitMap.get(ip) || 0;
-  if (now - lastCall < RATE_LIMIT_MS) {
-    return true;
+
+  try {
+    const lastCallStr = await store.get(key);
+    const lastCall = lastCallStr ? Number(lastCallStr) : 0;
+    if (now - lastCall < RATE_LIMIT_MS) {
+      return true;
+    }
+    await store.set(key, String(now));
+    return false;
+  } catch {
+    // If blobs fail, allow the request rather than blocking users
+    return false;
   }
-  rateLimitMap.set(ip, now);
-  return false;
+}
+
+/**
+ * Sanitizes user input before forwarding to Gemini API.
+ * Strips HTML tags and enforces a maximum character length.
+ *
+ * @param {string} text - Raw user input.
+ * @returns {string} Sanitized text.
+ */
+function sanitizeInput(text) {
+  if (typeof text !== 'string') return '';
+  return text.slice(0, 2000).replace(/<[^>]*>/g, '').trim();
+}
+
+/**
+ * Sanitizes all user-provided text parts within a `contents` array.
+ * Each content item may contain a `parts` array with `text` fields.
+ *
+ * @param {Array} contents - The Gemini API contents array.
+ * @returns {Array} Contents with sanitized text parts.
+ */
+function sanitizeContents(contents) {
+  if (!Array.isArray(contents)) return contents;
+  return contents.map((item) => {
+    if (!item.parts || !Array.isArray(item.parts)) return item;
+    return {
+      ...item,
+      parts: item.parts.map((part) =>
+        typeof part.text === 'string' ? { ...part, text: sanitizeInput(part.text) } : part
+      ),
+    };
+  });
+}
+
+/**
+ * Checks whether the request origin is in the allowed list.
+ *
+ * @param {Request} request - The incoming HTTP request.
+ * @returns {{ allowed: boolean, origin: string }} Validation result.
+ */
+function validateOrigin(request) {
+  const origin = request.headers.get('origin') || request.headers.get('referer') || '';
+  const isAllowed = ALLOWED_ORIGINS.some((o) => origin.startsWith(o)) || !origin;
+  return { allowed: isAllowed, origin };
 }
 
 /**
@@ -78,9 +121,22 @@ export default async function handler(request) {
     return new Response('Method not allowed', { status: 405 });
   }
 
+  /* ── CORS origin validation ─────────────────────────────────── */
+  const { allowed, origin } = validateOrigin(request);
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: 'Origin not allowed' }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+  const corsOrigin = origin || ALLOWED_ORIGINS[0];
+
   /* ── Rate limiting ──────────────────────────────────────────── */
   const ip = getClientIp(request);
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip)) {
     return new Response(
       JSON.stringify({ error: 'Rate limited — please wait 10 seconds between requests.' }),
       {
@@ -109,7 +165,7 @@ export default async function handler(request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: body.contents,
+        contents: sanitizeContents(body.contents),
         systemInstruction: body.systemInstruction,
         generationConfig: body.generationConfig,
       }),
@@ -120,7 +176,7 @@ export default async function handler(request) {
       status: response.status,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': corsOrigin,
       },
     });
   } catch {

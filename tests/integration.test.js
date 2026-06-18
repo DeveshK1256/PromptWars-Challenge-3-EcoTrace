@@ -261,9 +261,10 @@ describe('Gemini Proxy Contract', () => {
     expect(firebase).toContain('Rate limited');
   });
 
-  it('rate limit documented as in-memory limitation', () => {
+  it('rate limiter uses persistent Netlify Blobs and proxy has security hardening', () => {
     const netlify = readFileSync('netlify/functions/gemini.js', 'utf-8');
-    expect(netlify).toContain('@limitation');
-    expect(netlify).toContain('cold start');
+    expect(netlify).toContain('getStore');
+    expect(netlify).toContain('sanitizeInput');
+    expect(netlify).toContain('ALLOWED_ORIGINS');
   });
 });

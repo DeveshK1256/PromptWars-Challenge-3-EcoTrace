@@ -39,6 +39,7 @@ await build({
   format: "esm",
   target: "es2022",
   minify: true,
+  treeShaking: true,
   sourcemap: false,
   // Firebase SDK and CDN libs stay as external imports
   external: [

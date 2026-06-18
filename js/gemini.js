@@ -194,3 +194,111 @@ export async function getPersonalizedTips(profile) {
   };
 }
 
+/* ── Internal Gemini proxy helper ─────────────────────────────── */
+
+/**
+ * Sends a raw text prompt to the Gemini proxy and returns the response text.
+ * Tries the Netlify function first, then the configured proxy endpoint.
+ *
+ * @param {string} prompt - The text prompt to send to Gemini.
+ * @returns {Promise<string>} The raw text content from Gemini's response.
+ * @throws {Error} If all proxy strategies fail.
+ */
+async function callGeminiProxy(prompt) {
+  const requestBody = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: GEMINI_TEMPERATURE,
+      responseMimeType: "application/json",
+    },
+    model: ECO_CONFIG.gemini.model,
+  };
+
+  /* Try Netlify serverless proxy */
+  try {
+    const res = await fetch(PROXY_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+    }
+  } catch { /* fall through */ }
+
+  /* Try configured proxy endpoint */
+  if (ECO_CONFIG.gemini.proxyEndpoint) {
+    const res = await fetch(ECO_CONFIG.gemini.proxyEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+    }
+  }
+
+  throw new Error("All Gemini proxy strategies failed");
+}
+
+/* ── Reduction Goals ──────────────────────────────────────────── */
+
+/**
+ * Returns static fallback reduction goals, optionally reordered to
+ * prioritize the user's highest-emission category.
+ *
+ * @param {Array<[string, number]>} [categories] - Sorted category entries.
+ * @returns {Array<{goal: string, savings: string, category: string}>}
+ */
+function getDefaultGoals(categories) {
+  const goals = [
+    { goal: 'Use public transport 3 days/week instead of driving', savings: '520 kg/year', category: 'Transport' },
+    { goal: 'Have 2 meatless days per week', savings: '320 kg/year', category: 'Food' },
+    { goal: 'Switch to LED bulbs and reduce AC by 2°C', savings: '280 kg/year', category: 'Energy' },
+  ];
+  if (categories && categories.length > 0) {
+    const highest = categories[0][0];
+    goals.sort((a, b) => {
+      if (a.category.toLowerCase() === highest) return -1;
+      if (b.category.toLowerCase() === highest) return 1;
+      return 0;
+    });
+  }
+  return goals;
+}
+
+/**
+ * Generates personalized carbon reduction goals using the Gemini API.
+ * Falls back to static goals if the API is unavailable.
+ *
+ * @param {number} totalKg - User's total annual carbon footprint in kg.
+ * @param {Object} breakdown - Category breakdown {transport, food, energy, shopping}.
+ * @returns {Promise<Array<{goal: string, savings: string, category: string}>>}
+ */
+export async function generateReductionGoals(totalKg, breakdown) {
+  if (!totalKg || totalKg <= 0) {
+    return getDefaultGoals();
+  }
+
+  const categories = Object.entries(breakdown || {})
+    .sort(([, a], [, b]) => b - a);
+
+  const prompt = `Given a carbon footprint of ${Math.round(totalKg)} kg CO₂/year with breakdown: ${categories.map(([k, v]) => `${k}=${Math.round(v)}kg`).join(', ')}. Generate exactly 3 specific, actionable reduction goals as JSON array: [{"goal": "...", "savings": "X kg/year", "category": "..."}]. Focus on the highest category first. Be specific about actions and savings.`;
+
+  if (!hasGeminiConfig()) {
+    return getDefaultGoals(categories);
+  }
+
+  try {
+    const raw = await callGeminiProxy(prompt);
+    const parsed = JSON.parse(raw.replace(/```json?|```/g, '').trim());
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed.slice(0, 3);
+  } catch {
+    logWarn('gemini', 'Reduction goals generation failed, using defaults');
+  }
+
+  return getDefaultGoals(categories);
+}
+
