@@ -30,11 +30,16 @@
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
 
 [[headers]]
-  for = "/*.js"
+  for = "/js/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+  for = "/js/chunk-*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.css"
+  for = "/css/*.css"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=300, must-revalidate"
