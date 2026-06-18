@@ -11,9 +11,9 @@ import { logError } from "./logger.js";
 
 /** @type {Function} Analytics tracker — safe no-op if firebase module is unavailable. */
 let trackEvent = () => {};
-try {
-  ({ trackEvent } = await import("./firebase.js"));
-} catch { /* analytics unavailable */ }
+import("./firebase.js")
+  .then((mod) => { trackEvent = mod.trackEvent || trackEvent; })
+  .catch(() => { /* analytics unavailable */ });
 
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");

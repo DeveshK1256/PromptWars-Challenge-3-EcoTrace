@@ -14,9 +14,9 @@ import { calculateFootprint } from "./calculator-engine.js";
 
 /** @type {Function} Analytics tracker — safe no-op if firebase export fails. */
 let trackEvent = () => {};
-try {
-  ({ trackEvent } = await import("./firebase.js"));
-} catch { /* analytics unavailable */ }
+import("./firebase.js")
+  .then((mod) => { trackEvent = mod.trackEvent || trackEvent; })
+  .catch(() => { /* analytics unavailable */ });
 
 /** @type {HTMLFormElement|null} Main calculator form element. */
 const form = document.querySelector("[data-calculator-form]");

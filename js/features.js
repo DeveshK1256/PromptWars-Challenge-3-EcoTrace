@@ -23,9 +23,9 @@ import { renderTeamLeaderboard, renderCreateTeamForm } from './team-challenges.j
 
 /** @type {Function} Analytics tracker — safe no-op if firebase export fails. */
 let trackEvent = () => {};
-try {
-  ({ trackEvent } = await import("./firebase.js"));
-} catch { /* analytics unavailable */ }
+import("./firebase.js")
+  .then((mod) => { trackEvent = mod.trackEvent || trackEvent; })
+  .catch(() => { /* analytics unavailable */ });
 
 /**
  * Forwards gamification mission-complete events to Firebase Analytics.
