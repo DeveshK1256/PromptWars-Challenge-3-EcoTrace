@@ -122,6 +122,10 @@ export function completeMission(missionId) {
   // Award points
   const currentPoints = Number(localStorage.getItem("greenPoints")) || 0;
   localStorage.setItem("greenPoints", String(currentPoints + mission.points));
+  // Notify listeners (e.g. analytics) — avoids circular deps with firebase.js
+  window.dispatchEvent(new CustomEvent("eco:mission-complete", {
+    detail: { missionId, points: mission.points },
+  }));
 
   return mission.points;
 }

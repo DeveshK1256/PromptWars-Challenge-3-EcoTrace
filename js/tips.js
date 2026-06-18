@@ -9,6 +9,12 @@ import { ecoService } from "./firebase.js";
 import { getPersonalizedTips } from "./gemini.js";
 import { logError } from "./logger.js";
 
+/** @type {Function} Analytics tracker — safe no-op if firebase module is unavailable. */
+let trackEvent = () => {};
+try {
+  ({ trackEvent } = await import("./firebase.js"));
+} catch { /* analytics unavailable */ }
+
 const tabs = document.querySelector("[data-tip-tabs]");
 const grid = document.querySelector("[data-tips-grid]");
 const status = document.querySelector("[data-tips-status]");
@@ -187,6 +193,7 @@ refreshButton?.addEventListener("click", async () => {
     sessionStorage.removeItem("ecotrace.aiTips");
     await loadTips(appState.user, true);
     showToast("Tips refreshed for today.");
+    trackEvent("tips_refresh", { category: activeCategory });
   } catch (error) {
     logError('tips', error);
     showToast("Tips could not be refreshed.", "error");

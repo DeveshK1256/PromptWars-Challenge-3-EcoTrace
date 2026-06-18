@@ -108,6 +108,38 @@
 └──────────────────────────────────────────────────────────────┘
 ```
 
+### System Diagram
+
+```mermaid
+graph TB
+    subgraph Client["Browser (8 HTML Pages)"]
+        UI["UI Layer<br/>39 ES Modules"]
+        SW["Service Worker<br/>Offline Cache"]
+    end
+
+    subgraph Google["Google Cloud Services"]
+        Auth["Firebase Auth<br/>Google OAuth + Email"]
+        FS["Cloud Firestore<br/>Users, Footprints, Leaderboard"]
+        Gemini["Gemini 2.0 Flash<br/>AI Tips + Chatbot"]
+        Maps["Maps JS + Places API<br/>Green Action Map"]
+        Search["Custom Search API<br/>News Feed"]
+        Analytics["Firebase Analytics<br/>Usage Tracking"]
+    end
+
+    subgraph Server["Netlify Functions"]
+        Proxy["Gemini Proxy<br/>Rate-limited, Server-side Key"]
+    end
+
+    UI -->|"Auth State"| Auth
+    UI -->|"CRUD"| FS
+    UI -->|"Prompts"| Proxy
+    Proxy -->|"API Key"| Gemini
+    UI -->|"Map Render"| Maps
+    UI -->|"News Query"| Search
+    UI -->|"Events"| Analytics
+    SW -.->|"Cache"| UI
+```
+
 ---
 
 ## 🛠️ Tech Stack

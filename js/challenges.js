@@ -8,6 +8,12 @@ import { appState, onUserReady, setButtonBusy, showToast } from "./app.js";
 import { ecoService } from "./firebase.js";
 import { logError } from "./logger.js";
 
+/** @type {Function} Analytics tracker — safe no-op if firebase module is unavailable. */
+let trackEvent = () => {};
+try {
+  ({ trackEvent } = await import("./firebase.js"));
+} catch { /* analytics unavailable */ }
+
 const challengeGrid = document.querySelector("[data-challenge-grid]");
 const badgeGrid = document.querySelector("[data-badge-grid]");
 const leaderboard = document.querySelector("[data-leaderboard]");
@@ -65,6 +71,9 @@ function createChallengeCard(challenge, accepted) {
       renderBadges(appState.profile);
       await renderLeaderboard(appState.user);
       showToast(result.awarded ? `Challenge accepted. +${challenge.points} points!` : "Challenge already accepted.");
+      if (result.awarded) {
+        trackEvent("challenge_accepted", { challenge_id: challenge.id, points: challenge.points });
+      }
     } catch (error) {
       logError('challenges', error);
       showToast("Challenge could not be accepted.", "error");

@@ -11,6 +11,12 @@ import { getPersonalizedTips } from "./gemini.js";
 import { logError } from "./logger.js";
 import { EMISSION_FACTORS, matchesEmissionFactor } from "./emission-factors.js";
 
+/** @type {Function} Analytics tracker — safe no-op if firebase export fails. */
+let trackEvent = () => {};
+try {
+  ({ trackEvent } = await import("./firebase.js"));
+} catch { /* analytics unavailable */ }
+
 /** @type {HTMLFormElement|null} Main calculator form element. */
 const form = document.querySelector("[data-calculator-form]");
 const panels = [...document.querySelectorAll("[data-step-panel]")];
@@ -367,6 +373,12 @@ function initCalculator() {
       await ecoService.saveFootprint(appState.user, latestResult);
       sessionStorage.setItem("ecotrace.latestProfile", JSON.stringify(latestResult));
       localStorage.setItem("lastFootprintKg", String(latestResult.totalKg));
+      localStorage.setItem('ecotrace.lastBreakdown', JSON.stringify({
+        transport: latestResult.breakdown.transport,
+        food: latestResult.breakdown.food,
+        energy: latestResult.breakdown.energy,
+        shopping: latestResult.breakdown.shopping,
+      }));
       // Also add to activities cache so the heatmap picks it up
       const activities = JSON.parse(localStorage.getItem('eco-activities-cache') || '[]');
       activities.push({
@@ -376,6 +388,7 @@ function initCalculator() {
       });
       localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
       showToast("Footprint result saved.");
+      trackEvent("calculator_completed", { total_kg: Math.round(latestResult.totalKg) });
     } catch (error) {
       logError('calculator', error);
       showToast("Result could not be saved. Please try again.", "error");

@@ -44,6 +44,15 @@ const PROXY_ENDPOINT = '/.netlify/functions/gemini';
  * @returns {string} A complete prompt instructing Gemini to return JSON tips.
  */
 function buildPrompt(profile) {
+  const lastFootprint = Number(localStorage.getItem('lastFootprintKg')) || 0;
+  const breakdown = JSON.parse(localStorage.getItem('ecotrace.lastBreakdown') || 'null');
+
+  let userContext = '';
+  if (breakdown) {
+    const total = lastFootprint || Object.values(breakdown).reduce((a, b) => a + b, 0);
+    userContext = `\n\nUser's annual carbon footprint: ${total} kg CO₂\nBreakdown: Transport=${breakdown.transport || 0}kg (${Math.round((breakdown.transport || 0) / total * 100)}%), Food=${breakdown.food || 0}kg (${Math.round((breakdown.food || 0) / total * 100)}%), Energy=${breakdown.energy || 0}kg (${Math.round((breakdown.energy || 0) / total * 100)}%), Shopping=${breakdown.shopping || 0}kg (${Math.round((breakdown.shopping || 0) / total * 100)}%)\n\nFocus your tips on the highest-impact category first. Be specific about kg savings.`;
+  }
+
   return `You are EcoTrace, a carbon footprint coach for users in India.
 Return JSON only with this exact shape:
 {
@@ -60,7 +69,7 @@ Return JSON only with this exact shape:
 }
 Create exactly ${MAX_TIPS} personalized tips. Prioritize the highest footprint categories and avoid guilt-heavy language.
 User profile:
-${JSON.stringify(profile, null, 2)}`;
+${JSON.stringify(profile, null, 2)}${userContext}`;
 }
 
 /**

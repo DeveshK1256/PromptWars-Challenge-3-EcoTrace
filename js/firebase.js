@@ -21,6 +21,48 @@ import {
   ensureUserDocument,
 } from "./firebase-auth.js";
 
+/* ── Analytics ────────────────────────────────────────────────────── */
+
+/** @type {Object|null} Firebase Analytics instance (null when unavailable). */
+let analytics = null;
+
+/**
+ * Lazily initialises Firebase Analytics once the Firebase app is ready.
+ * Silently no-ops when the SDK or Firebase config is unavailable.
+ * @returns {Promise<void>}
+ */
+async function ensureAnalytics() {
+  if (analytics) return;
+  try {
+    const runtime = await initFirebase();
+    if (!runtime) return;
+    const { getAnalytics } = await import(
+      "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js"
+    );
+    analytics = getAnalytics(runtime.app);
+  } catch { /* analytics not available in some environments */ }
+}
+
+/**
+ * Logs a custom analytics event to Firebase Analytics.
+ * Silently no-ops when analytics is not initialised.
+ * @param {string} eventName - GA4 event name (e.g. 'calculator_completed').
+ * @param {Object} [params={}] - Key-value pairs attached to the event.
+ * @returns {void}
+ */
+export function trackEvent(eventName, params = {}) {
+  ensureAnalytics().then(() => {
+    if (!analytics) return;
+    try {
+      import(
+        "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js"
+      ).then(({ logEvent }) => {
+        logEvent(analytics, eventName, params);
+      }).catch(() => { /* silently fail */ });
+    } catch { /* silently fail */ }
+  }).catch(() => { /* silently fail */ });
+}
+
 /* ── Named constants ──────────────────────────────────────────────── */
 
 /** Maximum length for a user display name. */

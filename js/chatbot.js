@@ -44,7 +44,9 @@ Rules:
 - Use 1-2 relevant emoji per response, no more.
 - If asked non-eco topics, briefly answer then gently connect it back to sustainability.
 - Never make up statistics. Say "I'm not sure of the exact figure" if uncertain.
-- Be warm, encouraging, and positive.`;
+- Be warm, encouraging, and positive.
+
+When the user asks for tips or advice, reference their specific carbon breakdown if available. Focus recommendations on their highest-emission category.`;
 
 /**
  * Builds a context-aware system instruction that includes the user's
@@ -144,6 +146,31 @@ function createChatWidget() {
 }
 
 /**
+ * Traps keyboard focus within the given container.
+ * @param {KeyboardEvent} e
+ * @param {HTMLElement} container
+ */
+function trapFocus(e, container) {
+  if (e.key !== 'Tab') return;
+  const focusable = container.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+/** @type {((e: KeyboardEvent) => void) | null} */
+let _trapListener = null;
+
+/**
  * Toggles the chat panel open/closed and updates ARIA attributes on the FAB.
  */
 function toggleChat() {
@@ -155,8 +182,13 @@ function toggleChat() {
   fab.setAttribute("aria-expanded", String(isOpen));
 
   if (isOpen) {
+    _trapListener = (e) => trapFocus(e, panel);
+    panel.addEventListener('keydown', _trapListener);
     const input = document.getElementById("ecobot-input");
     setTimeout(() => input?.focus(), FOCUS_DELAY_MS);
+  } else if (_trapListener) {
+    panel.removeEventListener('keydown', _trapListener);
+    _trapListener = null;
   }
 }
 

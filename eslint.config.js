@@ -42,6 +42,7 @@ export default [
         performance: "readonly",
         Blob: "readonly",
         google: "readonly",
+        CustomEvent: "readonly",
       },
     },
     rules: {

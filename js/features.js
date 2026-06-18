@@ -21,6 +21,20 @@ import { getForecast, renderForecast } from './forecasting.js';
 import { renderLevelProgress, renderDailyMissions, renderStreakDisplay } from './gamification.js';
 import { renderTeamLeaderboard, renderCreateTeamForm } from './team-challenges.js';
 
+/** @type {Function} Analytics tracker — safe no-op if firebase export fails. */
+let trackEvent = () => {};
+try {
+  ({ trackEvent } = await import("./firebase.js"));
+} catch { /* analytics unavailable */ }
+
+/**
+ * Forwards gamification mission-complete events to Firebase Analytics.
+ * @param {CustomEvent} e - The eco:mission-complete event.
+ */
+window.addEventListener("eco:mission-complete", (e) => {
+  trackEvent("mission_completed", e.detail);
+});
+
 /* ───────── Named Constants ───────── */
 
 /** @const {number} Upper PPM bound used for the time-machine progress bar. */
