@@ -7,7 +7,6 @@
  * public API is unchanged.
  */
 import { hasFirebaseConfig } from "./config.js";
-import { ecoService } from "./firebase.js";
 import { BADGES } from "./data.js";
 import { initAuthActions, updateAuthUI } from "./app-auth.js";
 import {
@@ -135,6 +134,9 @@ function enforceAuthGuard(user) {
  * a chance to restore the token.
  */
 async function initAuth() {
+  /* Dynamically import Firebase only when auth is needed.
+   * This defers ~100 KB of Firebase SDK from the critical path. */
+  const { ecoService } = await import("./firebase.js");
   let firstCall = true;
   await ecoService.onAuthState(async (user) => {
     appState.user = user;

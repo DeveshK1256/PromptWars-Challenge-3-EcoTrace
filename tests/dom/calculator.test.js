@@ -8,36 +8,38 @@ import { resolve } from 'path';
 // Read and evaluate the calculator source to extract the function
 const calcSource = readFileSync(resolve('js/calculator.js'), 'utf-8');
 
-describe('calculateFootprint', () => {
-  it('function exists in source code', () => {
-    expect(calcSource).toContain('function calculateFootprint');
+describe('calculateFootprint (real imports)', () => {
+  it('returns object with totalKg and breakdown', async () => {
+    const { calculateFootprint } = await import('../../js/calculator-engine.js');
+    const result = calculateFootprint({
+      carKm: 100, flights: 2, publicTransport: 'weekly',
+      dietType: 'vegetarian', foodWaste: 'medium',
+      electricityBill: 2000, climateControl: false, renewable: false,
+      onlineOrders: 5, clothes: 10, electronics: 1,
+    });
+    expect(result.totalKg).toBeGreaterThan(0);
+    expect(result.breakdown.transport).toBeGreaterThan(0);
+    expect(result.breakdown.food).toBeGreaterThan(0);
+    expect(result.breakdown.energy).toBeGreaterThan(0);
+    expect(result.breakdown.shopping).toBeGreaterThan(0);
   });
 
-  it('accepts form data object', () => {
-    expect(calcSource).toContain('calculateFootprint(');
+  it('diet baselines affect food emissions correctly', async () => {
+    const { calculateFootprint } = await import('../../js/calculator-engine.js');
+    const base = { carKm: 0, flights: 0, publicTransport: 'weekly', foodWaste: 'low', electricityBill: 0, climateControl: false, renewable: false, onlineOrders: 0, clothes: 0, electronics: 0 };
+    const vegan = calculateFootprint({ ...base, dietType: 'vegan' });
+    const veg = calculateFootprint({ ...base, dietType: 'vegetarian' });
+    const meat = calculateFootprint({ ...base, dietType: 'meat' });
+    expect(vegan.breakdown.food).toBeLessThan(veg.breakdown.food);
+    expect(veg.breakdown.food).toBeLessThan(meat.breakdown.food);
   });
 
-  it('returns object with totalKg and breakdown', () => {
-    expect(calcSource).toContain('totalKg');
-    expect(calcSource).toContain('breakdown');
-  });
-
-  it('includes transport, food, energy, shopping in breakdown', () => {
-    expect(calcSource).toContain('transport:');
-    expect(calcSource).toContain('food:');
-    expect(calcSource).toContain('energy:');
-    expect(calcSource).toContain('shopping:');
-  });
-
-  it('uses diet baselines for food calculation', () => {
-    expect(calcSource).toContain('vegan');
-    expect(calcSource).toContain('vegetarian');
-    expect(calcSource).toContain('meat');
-  });
-
-  it('applies renewable energy multiplier', () => {
-    expect(calcSource).toContain('renewable');
-    expect(calcSource).toContain('0.65');
+  it('renewable energy reduces emissions', async () => {
+    const { calculateFootprint } = await import('../../js/calculator-engine.js');
+    const base = { carKm: 0, flights: 0, publicTransport: 'weekly', dietType: 'vegetarian', foodWaste: 'medium', electricityBill: 3000, climateControl: false, onlineOrders: 0, clothes: 0, electronics: 0 };
+    const noRenew = calculateFootprint({ ...base, renewable: false });
+    const withRenew = calculateFootprint({ ...base, renewable: true });
+    expect(withRenew.breakdown.energy).toBeLessThan(noRenew.breakdown.energy);
   });
 });
 

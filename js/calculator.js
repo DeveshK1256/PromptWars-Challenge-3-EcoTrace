@@ -10,6 +10,7 @@ import { ecoService } from "./firebase.js";
 import { getPersonalizedTips } from "./gemini.js";
 import { logError } from "./logger.js";
 import { EMISSION_FACTORS, matchesEmissionFactor } from "./emission-factors.js";
+import { calculateFootprint } from "./calculator-engine.js";
 
 /** @type {Function} Analytics tracker — safe no-op if firebase export fails. */
 let trackEvent = () => {};
@@ -94,61 +95,11 @@ function getCalculatorData() {
 
 /**
  * Calculates the annual carbon footprint from user inputs.
- * Computes category breakdowns for transport, food, energy, and shopping,
- * then returns the total alongside the original form data.
- * @param {Object} [input=getCalculatorData()] - Calculator input values; defaults to current form state.
- * @param {number} input.carKm - Weekly car kilometres driven.
- * @param {number} input.flights - Number of flights per year.
- * @param {string} input.publicTransport - Public transport frequency ('none'|'occasional'|'weekly'|'daily').
- * @param {string} input.dietType - Diet type ('vegan'|'vegetarian'|'meat').
- * @param {string} input.foodWaste - Food waste level ('low'|'medium'|'high').
- * @param {number} input.electricityBill - Monthly electricity bill in INR.
- * @param {boolean} input.climateControl - Whether AC/heater is used regularly.
- * @param {boolean} input.renewable - Whether renewable energy sources are used.
- * @param {number} input.onlineOrders - Number of online orders per month.
- * @param {number} input.clothes - Number of new clothing items per year.
- * @param {number} input.electronics - Number of new electronic devices per year.
- * @returns {{ formData: Object, breakdown: { transport: number, food: number, energy: number, shopping: number }, totalKg: number }} Calculation result with per-category breakdown and total in kg CO₂/year.
+ * Delegates to the pure engine module for the actual math.
+ * @param {Object} [input=getCalculatorData()] - Calculator input values.
+ * @returns {{ formData: Object, breakdown: { transport: number, food: number, energy: number, shopping: number }, totalKg: number }}
  */
-export function calculateFootprint(input = getCalculatorData()) {
-  const publicTransportMultiplier = {
-    none: 1.12,
-    occasional: 0.98,
-    weekly: 0.86,
-    daily: 0.68,
-  }[input.publicTransport];
-  const transport = Math.max(120, input.carKm * 0.12 * 52 * publicTransportMultiplier + input.flights * 250);
-
-  const dietBase = {
-    vegan: 780,
-    vegetarian: 1120,
-    meat: 1780,
-  }[input.dietType];
-  const wasteAdd = {
-    low: 60,
-    medium: 180,
-    high: 360,
-  }[input.foodWaste];
-  const food = dietBase + wasteAdd;
-
-  const monthlyKwh = input.electricityBill / 8.5;
-  let energy = monthlyKwh * 0.72 * 12 + (input.climateControl ? 310 : 80);
-  if (input.renewable) energy *= 0.65;
-
-  const shopping = input.onlineOrders * 6 * 12 + input.clothes * 18 + input.electronics * 220 + 120;
-
-  const breakdown = {
-    transport: Math.round(transport),
-    food: Math.round(food),
-    energy: Math.round(energy),
-    shopping: Math.round(shopping),
-  };
-  return {
-    formData: input,
-    breakdown,
-    totalKg: Object.values(breakdown).reduce((sum, value) => sum + value, 0),
-  };
-}
+export { calculateFootprint } from "./calculator-engine.js";
 
 /**
  * Updates wizard step visibility and indicator states based on the current activeStep.
@@ -178,7 +129,7 @@ function renderStep() {
  * @returns {void}
  */
 function renderScore() {
-  latestResult = calculateFootprint();
+  latestResult = calculateFootprint(getCalculatorData());
   const total = latestResult.totalKg;
   const trees = Math.ceil(total / ECO_CONFIG.app.kgPerTreePerYear);
   document.querySelectorAll("[data-live-score]").forEach((node) => {

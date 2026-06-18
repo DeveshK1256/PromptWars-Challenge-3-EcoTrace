@@ -183,3 +183,43 @@ export const geminiProxy = onRequest(
   },
 );
 
+/* ── 4. Scheduled: Weekly inactive-user cleanup ──────────────────── */
+
+/** @type {number} Milliseconds in 90 days — threshold for stale profiles. */
+const STALE_THRESHOLD_MS = 90 * 24 * 60 * 60 * 1000;
+
+/**
+ * Runs weekly on Sunday at 02:00 UTC. Marks stale profiles (no activity
+ * in 90 days) as inactive so the leaderboard only shows active users.
+ * Also cleans up orphaned rate-limit entries from the in-memory map.
+ *
+ * @returns {Promise<void>}
+ */
+export const cleanupStaleProfiles = onSchedule('every sunday 02:00', async () => {
+  const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
+  const staleSnapshot = await db.collection('publicProfiles')
+    .where('lastActiveAt', '<', cutoff.toISOString())
+    .get();
+
+  const batch = db.batch();
+  let count = 0;
+
+  staleSnapshot.docs.forEach((doc) => {
+    batch.update(doc.ref, { isActive: false });
+    count++;
+  });
+
+  if (count > 0) {
+    await batch.commit();
+    console.log(`Marked ${count} stale profiles as inactive.`);
+  }
+
+  // Clean in-memory rate limit map
+  const oldEntries = [...rateLimitMap.entries()].filter(
+    ([, timestamp]) => Date.now() - timestamp > RATE_LIMIT_MS * 6,
+  );
+  oldEntries.forEach(([key]) => rateLimitMap.delete(key));
+  if (oldEntries.length > 0) {
+    console.log(`Cleaned ${oldEntries.length} stale rate-limit entries.`);
+  }
+});
