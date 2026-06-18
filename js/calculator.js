@@ -340,6 +340,23 @@ function initCalculator() {
       localStorage.setItem('eco-activities-cache', JSON.stringify(activities));
       showToast("Footprint result saved.");
       trackEvent("calculator_completed", { total_kg: Math.round(latestResult.totalKg) });
+
+      // Track first calculation milestone
+      if (!localStorage.getItem("eco-first-calc")) {
+        localStorage.setItem("eco-first-calc", "true");
+        trackEvent("first_calculation", { total_kg: Math.round(latestResult.totalKg) });
+      }
+
+      // Set user properties for Analytics segmentation
+      import("./firebase.js").then((mod) => {
+        if (mod.setAnalyticsUserProperties) {
+          const formData = Object.fromEntries(new FormData(form));
+          mod.setAnalyticsUserProperties({
+            diet_type: formData.dietType || "unknown",
+            uses_renewable: String(!!formData.renewable),
+          });
+        }
+      }).catch(() => { /* silently fail */ });
     } catch (error) {
       logError('calculator', error);
       showToast("Result could not be saved. Please try again.", "error");

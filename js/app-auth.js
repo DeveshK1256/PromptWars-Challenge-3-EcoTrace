@@ -6,7 +6,7 @@
  */
 import { appState, setButtonBusy, showToast } from "./app.js";
 import { hasFirebaseConfig } from "./config.js";
-import { ecoService } from "./firebase.js";
+import { ecoService, trackEvent } from "./firebase.js";
 import { logError } from "./logger.js";
 
 /* ── Magic-number constants ─────────────────────────────────────── */
@@ -27,6 +27,7 @@ function setupGoogleSignIn() {
         appState.user = user;
         appState.profile = await ecoService.getProfile(user);
         updateAuthUI(appState.user, appState.profile);
+        trackEvent('sign_in', { method: 'google' });
         showToast("Signed in with Google.");
         const returnTo = sessionStorage.getItem("ecotrace.returnTo");
         if (returnTo) {
@@ -106,6 +107,7 @@ function setupSignInForm(isExpectedAuthError, getAuthErrorMessage) {
         appState.user = user;
         appState.profile = await ecoService.getProfile(user);
         updateAuthUI(appState.user, appState.profile);
+        trackEvent(action === 'signup' ? 'sign_up' : 'sign_in', { method: 'email' });
         showToast(action === "signup" ? "EcoTrace account created." : "Signed in successfully.");
         form.reset();
       } catch (error) {

@@ -3,6 +3,10 @@
  * Pure calculation logic for the carbon footprint calculator.
  * Contains no DOM dependencies — safe to import in tests, workers, and SSR.
  *
+ * Constants below use hardcoded defaults. For dynamic updates without
+ * redeploying, these values can be overridden via Firebase Remote Config.
+ * See {@link module:firebase~getRemoteConfigValue} for the config API.
+ *
  * @see {@link ./calculator.js} for the UI layer that consumes these functions.
  */
 

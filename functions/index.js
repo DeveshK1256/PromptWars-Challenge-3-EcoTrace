@@ -139,20 +139,30 @@ export const geminiProxy = onRequest(
       return;
     }
 
-    // Rate limiting (in-memory — resets on cold start)
+    // Rate limiting (Firestore-backed — survives cold starts)
     const clientIp =
       req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
       req.ip ||
       'unknown';
     const now = Date.now();
-    const lastCall = rateLimitMap.get(clientIp) || 0;
-    if (now - lastCall < RATE_LIMIT_MS) {
-      res.status(HTTP_TOO_MANY_REQUESTS).json({
-        error: 'Rate limited — please wait 10 seconds between requests.',
-      });
-      return;
+    const ipHash = clientIp.replace(/[.:/]/g, '_');
+
+    try {
+      const rateLimitRef = db.doc(`rateLimits/${ipHash}`);
+      const rateLimitDoc = await rateLimitRef.get();
+      const lastCall = rateLimitDoc.exists ? rateLimitDoc.data().lastCall || 0 : 0;
+
+      if (now - lastCall < RATE_LIMIT_MS) {
+        res.status(HTTP_TOO_MANY_REQUESTS).json({
+          error: 'Rate limited — please wait 10 seconds between requests.',
+        });
+        return;
+      }
+      await rateLimitRef.set({ lastCall: now, ip: clientIp }, { merge: true });
+    } catch (rateLimitError) {
+      // If Firestore is unavailable, allow the request (fail-open)
+      console.warn('Rate limit check failed, allowing request:', rateLimitError);
     }
-    rateLimitMap.set(clientIp, now);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

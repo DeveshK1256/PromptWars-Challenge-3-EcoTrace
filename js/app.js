@@ -171,6 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
   initReducedMotionToggle();
   initAuth();
 
+  // Track page view in Firebase Analytics (non-blocking)
+  import("./firebase.js")
+    .then((mod) => { if (mod.trackPageView) mod.trackPageView(); })
+    .catch(() => { /* analytics unavailable */ });
+
   // Lazy-load chatbot after initial render to avoid blocking page load
   let chatbotLoaded = false;
   function loadChatbot() {

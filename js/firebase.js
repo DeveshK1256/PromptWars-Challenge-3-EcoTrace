@@ -63,6 +63,84 @@ export function trackEvent(eventName, params = {}) {
   }).catch(() => { /* silently fail */ });
 }
 
+/**
+ * Sets user properties in Firebase Analytics for audience segmentation.
+ * @param {Object} properties - Key-value pairs (e.g. { diet_type: 'vegan' }).
+ * @returns {void}
+ */
+export function setAnalyticsUserProperties(properties) {
+  ensureAnalytics().then(() => {
+    if (!analytics) return;
+    import(
+      "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js"
+    ).then(({ setUserProperties: setProps }) => {
+      setProps(analytics, properties);
+    }).catch(() => { /* silently fail */ });
+  }).catch(() => { /* silently fail */ });
+}
+
+/**
+ * Tracks a page_view event with the current page path.
+ * Called automatically on DOMContentLoaded.
+ * @returns {void}
+ */
+export function trackPageView() {
+  trackEvent('page_view', {
+    page_path: window.location.pathname,
+    page_title: document.title,
+  });
+}
+
+/* ── Remote Config ───────────────────────────────────────────────── */
+
+/** @type {Object|null} Remote Config instance. */
+let remoteConfig = null;
+
+/**
+ * Initialises Firebase Remote Config with default emission factor values.
+ * Fetches and activates remote values; falls back to defaults on error.
+ * @returns {Promise<void>}
+ */
+async function ensureRemoteConfig() {
+  if (remoteConfig) return;
+  try {
+    const runtime = await initFirebase();
+    if (!runtime) return;
+    const { getRemoteConfig, fetchAndActivate } = await import(
+      "https://www.gstatic.com/firebasejs/10.13.2/firebase-remote-config.js"
+    );
+    remoteConfig = getRemoteConfig(runtime.app);
+    remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
+    remoteConfig.defaultConfig = {
+      flight_emissions_kg: 250,
+      renewable_multiplier: 0.65,
+      india_avg_co2_kg: 1900,
+      world_avg_co2_kg: 4000,
+    };
+    await fetchAndActivate(remoteConfig);
+  } catch { /* Remote Config not available */ }
+}
+
+/**
+ * Gets a value from Firebase Remote Config, falling back to a default.
+ * @param {string} key - Config key name.
+ * @param {*} defaultValue - Fallback if Remote Config is unavailable.
+ * @returns {Promise<*>} The config value or default.
+ */
+export async function getRemoteConfigValue(key, defaultValue) {
+  try {
+    await ensureRemoteConfig();
+    if (!remoteConfig) return defaultValue;
+    const { getValue } = await import(
+      "https://www.gstatic.com/firebasejs/10.13.2/firebase-remote-config.js"
+    );
+    const val = getValue(remoteConfig, key);
+    return val.asNumber() || defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
 /* ── Named constants ──────────────────────────────────────────────── */
 
 /** Maximum length for a user display name. */

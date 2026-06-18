@@ -1656,10 +1656,13 @@ textarea:focus-visible {
   .step-indicator {
     justify-content: center;
     padding: 0.45rem;
-    font-size: 0;
+    overflow: hidden;
+    text-indent: -9999px;
   }
 
   .step-indicator span {
+    display: inline-block;
+    text-indent: 0;
     font-size: 0.85rem;
   }
 
