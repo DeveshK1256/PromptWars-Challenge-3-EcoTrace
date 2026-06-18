@@ -79,8 +79,9 @@ await build({
   sourcemap: false,
 });
 
-// 3. Copy HTML files (strip whitespace between tags)
+// 3. Copy HTML files (strip whitespace + add cache-busting)
 const htmlFiles = readdirSync(".").filter((f) => f.endsWith(".html"));
+const buildHash = Date.now().toString(36); // short unique hash per build
 for (const file of htmlFiles) {
   let html = readFileSync(file, "utf-8");
   // Collapse whitespace between tags
@@ -89,6 +90,10 @@ for (const file of htmlFiles) {
   html = html.replace(/<!--(?!\[if).*?-->/gs, "");
   // Collapse multiple spaces/newlines
   html = html.replace(/\s{2,}/g, " ");
+  // Add cache-busting version to local JS/CSS references
+  html = html.replace(/src="(\.?\/?)js\//g, `src="$1js/`);
+  html = html.replace(/src="(js\/[^"]+\.js)"/g, `src="$1?v=${buildHash}"`);
+  html = html.replace(/href="(css\/[^"]+\.css)"/g, `href="$1?v=${buildHash}"`);
   writeFileSync(join(DIST, file), html);
 }
 
