@@ -3160,7 +3160,7 @@ textarea:focus-visible {
 .forecast-bar-label { font-size: 0.62rem; color: var(--text-secondary); margin-block-start: 0.3rem; font-weight: 500; }
 .forecast-bar-value { font-size: 0.58rem; font-weight: 700; margin-block-end: 0.2rem; color: var(--primary, #2f7c64); }
 
-/* â”€â”€ Team Challenges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ──── Team Challenges ─────────────────────────────────────────── */
 .team-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .team-table th {
   text-align: left;
@@ -3191,12 +3191,41 @@ textarea:focus-visible {
 [data-theme="dark"] .sim-slider-row,
 [data-theme="dark"] .sim-card,
 [data-theme="dark"] .equiv-card,
-[data-theme="dark"] .forecast-card,
-[data-theme="dark"] .mission-card,
-[data-theme="dark"] .streak-display,
+[data-theme="dark"] .forecast-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mission-card {
+  background: linear-gradient(135deg, rgba(47, 124, 100, 0.12), rgba(22, 36, 32, 0.8));
+  border-color: rgba(78, 203, 142, 0.15);
+}
+[data-theme="dark"] .streak-display {
+  background: linear-gradient(135deg, rgba(47, 124, 100, 0.1), rgba(22, 36, 32, 0.7));
+  border-color: rgba(78, 203, 142, 0.12);
+}
 [data-theme="dark"] .level-display {
-  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, rgba(47, 124, 100, 0.12), rgba(22, 36, 32, 0.8));
+  border-color: rgba(78, 203, 142, 0.15);
+}
+[data-theme="dark"] .level-progress-track { background: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .streak-badge {
+  background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+}
+[data-theme="dark"] .streak-badge-earned {
+  background: rgba(47, 124, 100, 0.2);
+  color: var(--forest);
+  border-color: rgba(78, 203, 142, 0.3);
+  opacity: 1;
+}
+[data-theme="dark"] .mission-points {
+  background: rgba(78, 203, 142, 0.15);
+  color: var(--forest);
+}
+[data-theme="dark"] .leaderboard li {
+  background: linear-gradient(135deg, rgba(47, 124, 100, 0.1), rgba(22, 36, 32, 0.6));
+  border-color: rgba(78, 203, 142, 0.1);
 }
 [data-theme="dark"] .sim-label i { background: rgba(167, 201, 87, 0.12); }
 [data-theme="dark"] .mission-card i { background: rgba(47, 124, 100, 0.7); }
