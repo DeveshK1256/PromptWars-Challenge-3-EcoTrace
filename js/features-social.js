@@ -62,26 +62,38 @@ function drawScoreCard(ctx, width, height) {
   ctx.font = "bold 14px sans-serif";
   ctx.fillText("MY CARBON SCORECARD", 32, 80);
 
-  // Read data from DOM first (profile page), fall back to localStorage (dashboard)
-  const saved = document.querySelector("[data-stat-saved]")?.textContent
-    || `${Number(localStorage.getItem("lastFootprintKg") || 0).toLocaleString()} kg`;
-  const points = document.querySelector("[data-stat-points]")?.textContent
-    || String(Number(localStorage.getItem("greenPoints") || 0));
-  const badgeCount = document.querySelector("[data-stat-badges]")?.textContent
-    || String(Number(localStorage.getItem("ecotrace.badgeCount") || 0));
+  // Read footprint from localStorage (set by calculator)
+  const footprintKg = Number(localStorage.getItem("lastFootprintKg") || 0);
+  const indiaAvgKg = 1900;
+  const points = Number(localStorage.getItem("greenPoints") || 0);
+
+  // Calculate badge count from points using same thresholds as data.js
+  const badgeThresholds = [0, 50, 150, 300, 500, 750, 1000, 1500, 2000, 3000];
+  const badgeCount = badgeThresholds.filter(t => points >= t).length;
+
+  // Show footprint or a prompt to calculate
+  const footprintText = footprintKg > 0
+    ? `${footprintKg.toLocaleString()} kg`
+    : "Not calculated yet";
 
   ctx.fillStyle = "#4ecb8e";
   ctx.font = "bold 48px 'Space Grotesk',sans-serif";
-  ctx.fillText(saved, 32, 145);
+  ctx.fillText(footprintText, 32, 145);
 
   ctx.fillStyle = "#b8cfc2";
   ctx.font = "16px sans-serif";
-  ctx.fillText("CO₂ Saved", 32, 170);
+  if (footprintKg > 0 && footprintKg < indiaAvgKg) {
+    ctx.fillText(`CO₂/year — ${Math.round(((indiaAvgKg - footprintKg) / indiaAvgKg) * 100)}% below India avg`, 32, 170);
+  } else if (footprintKg > 0) {
+    ctx.fillText("CO₂/year — Annual carbon footprint", 32, 170);
+  } else {
+    ctx.fillText("Use the Calculator to see your footprint", 32, 170);
+  }
 
   ctx.fillStyle = "#fff";
   ctx.font = "bold 32px 'Space Grotesk',sans-serif";
-  ctx.fillText(points, 32, 225);
-  ctx.fillText(badgeCount, 220, 225);
+  ctx.fillText(points.toLocaleString(), 32, 225);
+  ctx.fillText(String(badgeCount), 220, 225);
 
   ctx.fillStyle = "#8ba99a";
   ctx.font = "14px sans-serif";
